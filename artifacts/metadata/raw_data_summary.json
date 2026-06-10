@@ -1,0 +1,245 @@
+{
+  "generated_at_date": "2026-06-10",
+  "safe_count_max_bytes": 262144000,
+  "file_count": 6,
+  "notes": [
+    "Metadata is sanitized and contains table-level information only.",
+    "Absolute local paths, row samples, and environment details are not persisted."
+  ],
+  "files": [
+    {
+      "file_name": "add_to_cart.parquet",
+      "relative_path": "data/raw/synerise_dataset/add_to_cart.parquet",
+      "size_bytes": 105425078,
+      "size_human": "100.54 MB",
+      "inferred_format": "parquet",
+      "spark_readable_candidate": true,
+      "readable_by_spark": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "sku",
+            "nullable": true,
+            "type": "long"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 7541117,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "error_summary": null,
+      "notes": [],
+      "spark_read_attempted": true
+    },
+    {
+      "file_name": "page_visit.parquet",
+      "relative_path": "data/raw/synerise_dataset/page_visit.parquet",
+      "size_bytes": 2010901793,
+      "size_human": "1.87 GB",
+      "inferred_format": "parquet",
+      "spark_readable_candidate": true,
+      "readable_by_spark": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "url",
+            "nullable": true,
+            "type": "long"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": null,
+      "row_count_status": "skipped",
+      "row_count_skipped_reason": "Skipped because file size 1.87 GB is above safe count threshold 250.00 MB.",
+      "error_summary": null,
+      "notes": [],
+      "spark_read_attempted": true
+    },
+    {
+      "file_name": "product_buy.parquet",
+      "relative_path": "data/raw/synerise_dataset/product_buy.parquet",
+      "size_bytes": 31512514,
+      "size_human": "30.05 MB",
+      "inferred_format": "parquet",
+      "spark_readable_candidate": true,
+      "readable_by_spark": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "sku",
+            "nullable": true,
+            "type": "long"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 2318502,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "error_summary": null,
+      "notes": [],
+      "spark_read_attempted": true
+    },
+    {
+      "file_name": "product_properties.parquet",
+      "relative_path": "data/raw/synerise_dataset/product_properties.parquet",
+      "size_bytes": 67363395,
+      "size_human": "64.24 MB",
+      "inferred_format": "parquet",
+      "spark_readable_candidate": true,
+      "readable_by_spark": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "sku",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "category",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "price",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "name",
+            "nullable": true,
+            "type": "string"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 1534050,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "error_summary": null,
+      "notes": [],
+      "spark_read_attempted": true
+    },
+    {
+      "file_name": "remove_from_cart.parquet",
+      "relative_path": "data/raw/synerise_dataset/remove_from_cart.parquet",
+      "size_bytes": 36530822,
+      "size_human": "34.84 MB",
+      "inferred_format": "parquet",
+      "spark_readable_candidate": true,
+      "readable_by_spark": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "sku",
+            "nullable": true,
+            "type": "long"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 2688894,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "error_summary": null,
+      "notes": [],
+      "spark_read_attempted": true
+    },
+    {
+      "file_name": "search_query.parquet",
+      "relative_path": "data/raw/synerise_dataset/search_query.parquet",
+      "size_bytes": 352048335,
+      "size_human": "335.74 MB",
+      "inferred_format": "parquet",
+      "spark_readable_candidate": true,
+      "readable_by_spark": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "query",
+            "nullable": true,
+            "type": "string"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": null,
+      "row_count_status": "skipped",
+      "row_count_skipped_reason": "Skipped because file size 335.74 MB is above safe count threshold 250.00 MB.",
+      "error_summary": null,
+      "notes": [],
+      "spark_read_attempted": true
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+# raw and generated data
+data/raw/
+data/interim/
+data/processed/
+data/serving/
+data/external/
+
+# large artifacts and outputs
+artifacts/*
+!artifacts/metadata/
+!artifacts/metadata/raw_data_summary.json
+outputs/
+models/
+*.model
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+
+# local databases
+*.db
+*.sqlite
+*.sqlite3
+*.duckdb
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+
+# notebook checkpoints
+.ipynb_checkpoints/
+
+# Spark
+spark-warehouse/
+metastore_db/
+derby.log
+*.crc
+_temporary/
+
+# logs
+*.log
