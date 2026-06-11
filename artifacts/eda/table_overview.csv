@@ -1,0 +1,7 @@
+table_name,relative_path,file_size_human,spark_readable,row_count,row_count_status,column_count,timestamp_min,timestamp_max,has_client_id,has_timestamp,has_sku,has_url,has_query,has_category,has_price
+add_to_cart,data/raw/synerise_dataset/add_to_cart.parquet,100.54 MB,True,7541117,counted,3,2022-06-23 00:10:20,2022-12-08 00:09:55,True,True,True,False,False,False,False
+page_visit,data/raw/synerise_dataset/page_visit.parquet,1.87 GB,True,199451980,counted,3,2022-06-23 00:10:00,2022-12-08 00:09:59,True,True,False,True,False,False,False
+product_buy,data/raw/synerise_dataset/product_buy.parquet,30.05 MB,True,2318502,counted,3,2022-06-23 00:12:15,2022-12-08 00:09:15,True,True,True,False,False,False,False
+product_properties,data/raw/synerise_dataset/product_properties.parquet,64.24 MB,True,1534050,counted,4,,,False,False,True,False,False,True,True
+remove_from_cart,data/raw/synerise_dataset/remove_from_cart.parquet,34.84 MB,True,2688894,counted,3,2022-06-23 00:12:25,2022-12-08 00:09:40,True,True,True,False,False,False,False
+search_query,data/raw/synerise_dataset/search_query.parquet,335.74 MB,True,13223769,counted,3,2022-06-23 00:10:00,2022-12-08 00:09:55,True,True,False,False,True,False,False

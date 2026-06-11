@@ -78,7 +78,7 @@
       },
       "row_count": null,
       "row_count_status": "skipped",
-      "row_count_skipped_reason": "Skipped because file size 1.87 GB is above safe count threshold 250.00 MB.",
+      "row_count_skipped_reason": "Skipped by inspection policy; full count deferred to EDA",
       "error_summary": null,
       "notes": [],
       "spark_read_attempted": true
@@ -236,7 +236,7 @@
       },
       "row_count": null,
       "row_count_status": "skipped",
-      "row_count_skipped_reason": "Skipped because file size 335.74 MB is above safe count threshold 250.00 MB.",
+      "row_count_skipped_reason": "Skipped by inspection policy; full count deferred to EDA",
       "error_summary": null,
       "notes": [],
       "spark_read_attempted": true

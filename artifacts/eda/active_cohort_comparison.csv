@@ -1,0 +1,10 @@
+target_days,cutoff_date,target_end,cohort_option,cohort_definition,eligible_clients,clients_with_purchase_in_target,target_positive_rate,status,notes
+14,2022-11-25,2022-12-08,A,at least 1 purchase in history window,826947,48203,0.05829,computed,
+14,2022-11-25,2022-12-08,B,at least 1 add_to_cart or purchase event in history window,2418073,57754,0.023884,computed,
+14,2022-11-25,2022-12-08,C,"at least 1 page_visit, search_query, add_to_cart, or product_buy event in history window",,,,skipped,Skipped by default because page_visit is the largest table; compute as targeted follow-up if needed.
+30,2022-11-09,2022-12-08,A,at least 1 purchase in history window,739219,77669,0.105069,computed,
+30,2022-11-09,2022-12-08,B,at least 1 add_to_cart or purchase event in history window,2149796,93614,0.043546,computed,
+30,2022-11-09,2022-12-08,C,"at least 1 page_visit, search_query, add_to_cart, or product_buy event in history window",,,,skipped,Skipped by default because page_visit is the largest table; compute as targeted follow-up if needed.
+45,2022-10-25,2022-12-08,A,at least 1 purchase in history window,668496,91845,0.137391,computed,
+45,2022-10-25,2022-12-08,B,at least 1 add_to_cart or purchase event in history window,1925028,112154,0.058261,computed,
+45,2022-10-25,2022-12-08,C,"at least 1 page_visit, search_query, add_to_cart, or product_buy event in history window",,,,skipped,Skipped by default because page_visit is the largest table; compute as targeted follow-up if needed.

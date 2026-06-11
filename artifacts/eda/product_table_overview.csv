@@ -1,0 +1,2 @@
+table_name,row_count,distinct_sku_count,null_sku_count,distinct_category_count,null_category_count,null_price_count,price_min,price_max,price_avg,price_q25,price_median,price_q75,null_name_count
+product_properties,1534050,1369522,0,6347,0,0,0,99,47.8629,24.0,47.0,72.0,0

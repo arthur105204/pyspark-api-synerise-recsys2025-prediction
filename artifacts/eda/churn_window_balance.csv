@@ -1,0 +1,4 @@
+history_start,cutoff_date,target_end,history_days,target_days,eligible_clients,churn_clients,non_churn_clients,churn_rate,non_churn_rate,leakage_rule
+2022-06-23,2022-11-25,2022-12-08,155,14,826947,778744,48203,0.94171,0.05829,Features must only use events before cutoff_date. Labels must only use purchase events from cutoff_date to target_end. No target-window behavior should be used in feature calculations.
+2022-06-23,2022-11-09,2022-12-08,139,30,739219,661550,77669,0.894931,0.105069,Features must only use events before cutoff_date. Labels must only use purchase events from cutoff_date to target_end. No target-window behavior should be used in feature calculations.
+2022-06-23,2022-10-25,2022-12-08,124,45,668496,576651,91845,0.862609,0.137391,Features must only use events before cutoff_date. Labels must only use purchase events from cutoff_date to target_end. No target-window behavior should be used in feature calculations.

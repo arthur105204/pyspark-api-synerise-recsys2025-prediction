@@ -1,0 +1,6 @@
+table_name,event_type,row_count,distinct_client_id_count,null_client_id_count,timestamp_min,timestamp_max,null_timestamp_count,timestamp_parse_success_count,timestamp_parse_failure_count,entity_column,distinct_entity_count,null_entity_count
+add_to_cart,add_to_cart,7541117,2342336,0,2022-06-23 00:10:20,2022-12-08 00:09:55,0,7541117,0,sku,1287731,0
+page_visit,page_visit,199451980,20927946,0,2022-06-23 00:10:00,2022-12-08 00:09:59,0,199451980,0,url,14364653,0
+product_buy,product_buy,2318502,833095,0,2022-06-23 00:12:15,2022-12-08 00:09:15,0,2318502,0,sku,611933,0
+remove_from_cart,remove_from_cart,2688894,692666,0,2022-06-23 00:12:25,2022-12-08 00:09:40,0,2688894,0,sku,781525,0
+search_query,search_query,13223769,1589914,0,2022-06-23 00:10:00,2022-12-08 00:09:55,0,13223769,0,query,,0

@@ -1,0 +1,339 @@
+{
+  "generated_at_date": "2026-06-11",
+  "phase": "Phase 1: EDA",
+  "mode": "full-count",
+  "safe_count_max_bytes": 262144000,
+  "notes": [
+    "Artifacts contain sanitized table-level summaries only.",
+    "No raw row samples, actual client ids, query text, or product names are persisted.",
+    "Deferred safe-mode counts can be computed with --full-count.",
+    "CSV outputs are split into compact general, event-specific, product-specific, and column-level views."
+  ],
+  "tables": [
+    {
+      "table_name": "add_to_cart",
+      "relative_path": "data/raw/synerise_dataset/add_to_cart.parquet",
+      "file_size_bytes": 105425078,
+      "file_size_human": "100.54 MB",
+      "spark_readable": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "sku",
+            "nullable": true,
+            "type": "long"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 7541117,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "distinct_client_id_count": 2342336,
+      "null_client_id_count": 0,
+      "distinct_sku_count": 1287731,
+      "null_sku_count": 0,
+      "distinct_url_count": null,
+      "null_url_count": null,
+      "null_query_count": null,
+      "null_name_count": null,
+      "timestamp_min": "2022-06-23 00:10:20",
+      "timestamp_max": "2022-12-08 00:09:55",
+      "null_timestamp_count": 0,
+      "timestamp_parse_success_count": 7541117,
+      "timestamp_parse_failure_count": 0,
+      "distinct_category_count": null,
+      "null_category_count": null,
+      "null_price_count": null,
+      "price_summary": null,
+      "error_summary": null,
+      "notes": []
+    },
+    {
+      "table_name": "page_visit",
+      "relative_path": "data/raw/synerise_dataset/page_visit.parquet",
+      "file_size_bytes": 2010901793,
+      "file_size_human": "1.87 GB",
+      "spark_readable": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "url",
+            "nullable": true,
+            "type": "long"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 199451980,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "distinct_client_id_count": 20927946,
+      "null_client_id_count": 0,
+      "distinct_sku_count": null,
+      "null_sku_count": null,
+      "distinct_url_count": 14364653,
+      "null_url_count": 0,
+      "null_query_count": null,
+      "null_name_count": null,
+      "timestamp_min": "2022-06-23 00:10:00",
+      "timestamp_max": "2022-12-08 00:09:59",
+      "null_timestamp_count": 0,
+      "timestamp_parse_success_count": 199451980,
+      "timestamp_parse_failure_count": 0,
+      "distinct_category_count": null,
+      "null_category_count": null,
+      "null_price_count": null,
+      "price_summary": null,
+      "error_summary": null,
+      "notes": []
+    },
+    {
+      "table_name": "product_buy",
+      "relative_path": "data/raw/synerise_dataset/product_buy.parquet",
+      "file_size_bytes": 31512514,
+      "file_size_human": "30.05 MB",
+      "spark_readable": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "sku",
+            "nullable": true,
+            "type": "long"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 2318502,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "distinct_client_id_count": 833095,
+      "null_client_id_count": 0,
+      "distinct_sku_count": 611933,
+      "null_sku_count": 0,
+      "distinct_url_count": null,
+      "null_url_count": null,
+      "null_query_count": null,
+      "null_name_count": null,
+      "timestamp_min": "2022-06-23 00:12:15",
+      "timestamp_max": "2022-12-08 00:09:15",
+      "null_timestamp_count": 0,
+      "timestamp_parse_success_count": 2318502,
+      "timestamp_parse_failure_count": 0,
+      "distinct_category_count": null,
+      "null_category_count": null,
+      "null_price_count": null,
+      "price_summary": null,
+      "error_summary": null,
+      "notes": []
+    },
+    {
+      "table_name": "product_properties",
+      "relative_path": "data/raw/synerise_dataset/product_properties.parquet",
+      "file_size_bytes": 67363395,
+      "file_size_human": "64.24 MB",
+      "spark_readable": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "sku",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "category",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "price",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "name",
+            "nullable": true,
+            "type": "string"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 1534050,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "distinct_client_id_count": null,
+      "null_client_id_count": null,
+      "distinct_sku_count": 1369522,
+      "null_sku_count": 0,
+      "distinct_url_count": null,
+      "null_url_count": null,
+      "null_query_count": null,
+      "null_name_count": 0,
+      "timestamp_min": null,
+      "timestamp_max": null,
+      "null_timestamp_count": null,
+      "timestamp_parse_success_count": null,
+      "timestamp_parse_failure_count": null,
+      "distinct_category_count": 6347,
+      "null_category_count": 0,
+      "null_price_count": 0,
+      "price_summary": {
+        "min": 0,
+        "max": 99,
+        "avg": 47.8629,
+        "q25": 24.0,
+        "median": 47.0,
+        "q75": 72.0
+      },
+      "error_summary": null,
+      "notes": []
+    },
+    {
+      "table_name": "remove_from_cart",
+      "relative_path": "data/raw/synerise_dataset/remove_from_cart.parquet",
+      "file_size_bytes": 36530822,
+      "file_size_human": "34.84 MB",
+      "spark_readable": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "sku",
+            "nullable": true,
+            "type": "long"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 2688894,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "distinct_client_id_count": 692666,
+      "null_client_id_count": 0,
+      "distinct_sku_count": 781525,
+      "null_sku_count": 0,
+      "distinct_url_count": null,
+      "null_url_count": null,
+      "null_query_count": null,
+      "null_name_count": null,
+      "timestamp_min": "2022-06-23 00:12:25",
+      "timestamp_max": "2022-12-08 00:09:40",
+      "null_timestamp_count": 0,
+      "timestamp_parse_success_count": 2688894,
+      "timestamp_parse_failure_count": 0,
+      "distinct_category_count": null,
+      "null_category_count": null,
+      "null_price_count": null,
+      "price_summary": null,
+      "error_summary": null,
+      "notes": []
+    },
+    {
+      "table_name": "search_query",
+      "relative_path": "data/raw/synerise_dataset/search_query.parquet",
+      "file_size_bytes": 352048335,
+      "file_size_human": "335.74 MB",
+      "spark_readable": true,
+      "schema": {
+        "fields": [
+          {
+            "metadata": {},
+            "name": "client_id",
+            "nullable": true,
+            "type": "long"
+          },
+          {
+            "metadata": {},
+            "name": "timestamp",
+            "nullable": true,
+            "type": "string"
+          },
+          {
+            "metadata": {},
+            "name": "query",
+            "nullable": true,
+            "type": "string"
+          }
+        ],
+        "type": "struct"
+      },
+      "row_count": 13223769,
+      "row_count_status": "counted",
+      "row_count_skipped_reason": null,
+      "distinct_client_id_count": 1589914,
+      "null_client_id_count": 0,
+      "distinct_sku_count": null,
+      "null_sku_count": null,
+      "distinct_url_count": null,
+      "null_url_count": null,
+      "null_query_count": 0,
+      "null_name_count": null,
+      "timestamp_min": "2022-06-23 00:10:00",
+      "timestamp_max": "2022-12-08 00:09:55",
+      "null_timestamp_count": 0,
+      "timestamp_parse_success_count": 13223769,
+      "timestamp_parse_failure_count": 0,
+      "distinct_category_count": null,
+      "null_category_count": null,
+      "null_price_count": null,
+      "price_summary": null,
+      "error_summary": null,
+      "notes": []
+    }
+  ]
+}

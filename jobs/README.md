@@ -67,3 +67,98 @@ Review:
 - which inner tables are event logs and which are metadata
 - whether schemas and row counts are available
 - whether the next step should extract all Parquet files or only selected files needed for the MVP
+
+## `01_eda_summary.py`
+
+This job runs Phase 1 EDA on the Spark-readable Parquet files under `data/raw/synerise_dataset/`.
+
+It produces sanitized table-level summaries only:
+
+- table schemas
+- file sizes
+- Spark readability status
+- row count or row count status
+- approximate distinct counts for key columns
+- null counts for important columns
+- timestamp parse success/failure counts
+- timestamp min/max
+- product metadata price summary
+
+It does not write raw row samples, actual client ids, query text, or product names.
+
+### How to Run
+
+Safe mode is the default:
+
+```powershell
+python jobs/01_eda_summary.py
+python jobs/01_eda_summary.py --safe-mode
+```
+
+Full-count mode computes exact row counts for all readable tables and may take longer:
+
+```powershell
+python jobs/01_eda_summary.py --full-count
+```
+
+If `python` is not available on PATH, use the project environment's Python executable with the same script and arguments.
+
+### EDA Outputs
+
+The job writes:
+
+```text
+artifacts/eda/eda_summary.json
+artifacts/eda/table_overview.csv
+artifacts/eda/event_table_overview.csv
+artifacts/eda/product_table_overview.csv
+artifacts/eda/column_overview.csv
+```
+
+Output meaning:
+
+- `eda_summary.json`: nested table-level EDA metadata.
+- `table_overview.csv`: compact general table metadata.
+- `event_table_overview.csv`: event-table metrics for user activity tables.
+- `product_table_overview.csv`: product metadata metrics.
+- `column_overview.csv`: one row per column with null and distinct-count metadata where applicable.
+
+Before moving to preprocessing or feature engineering, review whether core columns are reliable, timestamps parse cleanly, purchase events support a label, and product metadata is useful for later features.
+
+## `01b_target_feasibility_eda.py`
+
+This job runs Phase 1.1 business target selection EDA for the first MVP scoring target.
+
+It produces aggregate-only summaries:
+
+- purchase date range
+- candidate target windows
+- purchase frequency per purchasing client
+- business target comparison for purchase propensity, cart conversion, and purchase-based churn
+- candidate churn/non-churn balance
+- active cohort comparison
+- leakage prevention notes
+
+It does not create final labels, feature tables, client-level outputs, raw row samples, actual client ids, query text, or product names.
+
+### How to Run
+
+```powershell
+python jobs/01b_target_feasibility_eda.py
+```
+
+### Business Target Selection Outputs
+
+The job writes:
+
+```text
+artifacts/eda/business_target_selection_summary.json
+artifacts/eda/business_target_comparison.csv
+artifacts/eda/target_feasibility_summary.json
+artifacts/eda/churn_window_balance.csv
+artifacts/eda/purchase_frequency_summary.csv
+artifacts/eda/active_cohort_comparison.csv
+artifacts/eda/target_feasibility_notes.md
+```
+
+Before moving to preprocessing, review the recommended MVP target, target window, eligible cohort definition, positive rate, repeat-purchase behavior, and leakage rules.
