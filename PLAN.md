@@ -31,8 +31,9 @@
 | Dataset inspection | Done | Raw metadata generated from Spark-readable Parquet files |
 | Metadata privacy | Done | Sanitized metadata contains no absolute local paths or row-level samples |
 | EDA | Completed | Full-count EDA artifacts generated and refined for readability |
-| Business target selection EDA | Completed pending review | Purchase propensity, cart conversion, and churn compared; next phase candidate is preprocessing |
-| Feature engineering | Not started | Requires EDA review first |
+| Business target selection EDA | Completed | Purchase propensity selected as provisional MVP target |
+| Preprocessing | Completed pending review | Spark preprocessing outputs and sanitized validation artifacts generated |
+| Feature engineering | Not started | Requires preprocessing review first |
 | Modeling | Not started | Requires label decision first |
 | API | Not started | Requires prediction table first |
 | Commit/push | Done | Stable foundation commit pushed to `origin/master` |
@@ -208,9 +209,31 @@ Guardrails:
 
 - Do not train model yet.
 - Do not create API.
+- Do not create final labels yet.
+- Do not create feature tables yet.
 - Do not mix future target data into feature windows.
 - Do not drop records silently.
 - Every cleaning rule must be documented with rationale.
+
+Generated outputs:
+
+- `data/processed/events/add_to_cart/`
+- `data/processed/events/remove_from_cart/`
+- `data/processed/events/product_buy/`
+- `data/processed/events/search_query/`
+- `data/processed/product_properties_clean/`
+
+Generated artifacts:
+
+- `artifacts/preprocessing/preprocessing_summary.json`
+- `artifacts/preprocessing/table_validation.csv`
+- `artifacts/preprocessing/duplicate_check_summary.csv`
+- `artifacts/preprocessing/product_metadata_validation.csv`
+- `artifacts/preprocessing/preprocessing_notes.md`
+
+Configuration:
+
+- `configs/pipeline_config.yaml`
 
 Verification/Test Steps:
 
@@ -218,7 +241,9 @@ Verification/Test Steps:
 - Validate null handling for `client_id`, `timestamp`, `sku`, `url`, `query`, and metadata fields where applicable.
 - Check duplicate strategy.
 - Check join readiness between event tables and `product_properties`.
-- Write clean intermediate outputs only if needed.
+- Write clean intermediate outputs with Spark Parquet writer.
+- Confirm `data/processed/` remains ignored by git.
+- Confirm artifacts contain aggregate validation only.
 
 Definition of Done:
 
@@ -226,6 +251,9 @@ Definition of Done:
 - Cleaned tables or transformations are reproducible.
 - Data leakage risks are identified.
 - Report explains input columns, cleaning logic, and output schema.
+- Processed outputs are created locally under `data/processed/`.
+- Sanitized preprocessing artifacts are generated.
+- No final labels, feature tables, model training, batch scoring, or API code is added.
 
 Review Questions:
 
@@ -233,9 +261,16 @@ Review Questions:
 - Which nulls are acceptable?
 - Should timestamp be converted to date/time fields?
 - Should product metadata be joined before or after aggregation?
+- Are processed event timestamps valid?
+- Are duplicate rates acceptable?
+- Is the product metadata dedup rule acceptable?
+- Are processed tables ready for feature engineering?
+- Is the 30-day purchase propensity target setup still accepted?
+- Are leakage rules documented clearly?
+- Should optional large tables be included now or deferred?
 
 Status:
-Not started.
+Completed pending review. Default preprocessing plus optional search preprocessing completed successfully. `page_visit` remains deferred. Spark writes succeeded for processed event and product outputs. Validation artifacts report zero invalid rows and zero timestamp parse failures for processed event tables.
 
 ### Phase 3: Feature Engineering
 

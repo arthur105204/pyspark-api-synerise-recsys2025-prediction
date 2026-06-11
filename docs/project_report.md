@@ -484,6 +484,84 @@ Open questions before preprocessing/feature engineering:
 - Should duplicate and skew checks be added in preprocessing or targeted follow-up EDA?
 - Should class imbalance handling be planned during modeling?
 
+## Preprocessing Milestone Summary
+
+Objective:
+Prepare clean, standardized intermediate tables for later feature engineering and label construction while keeping the current MVP target as purchase propensity.
+
+Input tables:
+
+- `add_to_cart`
+- `remove_from_cart`
+- `product_buy`
+- `search_query`
+- `product_properties`
+
+Deferred input:
+
+- `page_visit` was deferred because it is the largest table and is not required for the initial purchase propensity preprocessing path.
+
+Process:
+The preprocessing job reads raw Parquet tables with PySpark, parses event timestamps, creates `event_ts` and `event_date`, adds an `event_type`, validates required columns, checks aggregate duplicate rates, and writes cleaned intermediate Parquet outputs with Spark. Product metadata is cleaned into modeling-safe columns only: `sku`, `category`, and `price`.
+
+Output data:
+
+- `data/processed/events/add_to_cart/`
+- `data/processed/events/remove_from_cart/`
+- `data/processed/events/product_buy/`
+- `data/processed/events/search_query/`
+- `data/processed/product_properties_clean/`
+
+These processed data outputs are local pipeline outputs and are ignored by git.
+
+Output artifacts:
+
+- `artifacts/preprocessing/preprocessing_summary.json`
+- `artifacts/preprocessing/table_validation.csv`
+- `artifacts/preprocessing/duplicate_check_summary.csv`
+- `artifacts/preprocessing/product_metadata_validation.csv`
+- `artifacts/preprocessing/preprocessing_notes.md`
+
+Validation results:
+
+| Table | Input rows | Valid rows | Invalid rows | Timestamp parse failures | Write status |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `add_to_cart` | 7,541,117 | 7,541,117 | 0 | 0 | success |
+| `remove_from_cart` | 2,688,894 | 2,688,894 | 0 | 0 | success |
+| `product_buy` | 2,318,502 | 2,318,502 | 0 | 0 | success |
+| `search_query` | 13,223,769 | 13,223,769 | 0 | 0 | success |
+| `product_properties` | 1,534,050 | 1,534,050 | 0 | not applicable | success |
+
+Duplicate handling:
+
+| Table | Duplicate key | Duplicate extra rows | Duplicate extra row rate |
+| --- | --- | ---: | ---: |
+| `add_to_cart` | `client_id`, `event_ts`, `sku` | 161,493 | 0.021415 |
+| `remove_from_cart` | `client_id`, `event_ts`, `sku` | 153,588 | 0.057119 |
+| `product_buy` | `client_id`, `event_ts`, `sku` | 380,903 | 0.164288 |
+| `search_query` | `client_id`, `event_ts` | 787,135 | 0.059524 |
+
+Interpretation:
+The duplicate checks are aggregate diagnostics only. No duplicate row samples are persisted. Duplicate handling should be reviewed before feature engineering chooses whether repeated identical events should count as repeated behavior or be collapsed.
+
+Product metadata handling:
+
+`product_properties` has 1,534,050 input rows and 1,534,050 distinct SKUs in the preprocessing artifact. No duplicated SKU rows were detected in this run. The clean product metadata output excludes product names and keeps only `sku`, `category`, and `price`. The documented deterministic fallback rule is to group by `sku` and keep the most frequent category/price pair, with ties sorted by category and price.
+
+Leakage-safe target setup:
+
+The pipeline configuration records the provisional MVP target as purchase propensity with a 30-day target window. Preprocessing does not create final labels. Later feature construction must use only events before the cutoff date, while labels must use purchase behavior only in the target window.
+
+Open questions:
+
+- Should duplicate event rows be counted as repeated activity or deduplicated before feature aggregation?
+- Should `search_query` remain included for Phase 3 features even though raw query text is not retained in shared artifacts?
+- Should `page_visit` stay deferred for the MVP or be included after resource review?
+- Are `sku`, `category`, and `price` sufficient product metadata columns for the first feature set?
+
+Next decision before feature engineering:
+Approve the cleaned event/product tables and duplicate handling strategy before moving to Phase 3 feature engineering.
+
 ## 9. Risks and Open Questions
 
 - Compressed/archive file handling: if the dataset is provided as an archive in another environment, the inner Parquet files must be made available before Spark table ingestion.
@@ -497,30 +575,30 @@ Open questions before preprocessing/feature engineering:
 ## 10. Current Milestone
 
 Current milestone:
-Phase 1.1: Business Target Selection EDA.
+Phase 2: Preprocessing.
 
 Done in this milestone:
 
-- EDA summary job
-- sanitized EDA artifacts
-- business target selection EDA job
-- aggregate-only business target selection artifacts
+- preprocessing job
+- pipeline configuration
+- processed intermediate Spark Parquet outputs generated locally
+- sanitized preprocessing validation artifacts
 - README update
 - jobs README update
-- report EDA findings update
+- report preprocessing findings update
 - PLAN phase status update
 
 Not included yet:
 
-- preprocessing
 - feature engineering
+- final label tables
 - modeling
 - API
 
 ## 11. Next Steps
 
-1. Review EDA artifacts and findings.
-2. Review the full-count row counts for all six tables.
-3. Review business target selection findings and the provisional 30-day purchase propensity recommendation.
-4. Confirm core preprocessing columns: `client_id`, `timestamp`, and `sku`.
-5. Move to preprocessing only after EDA and business target selection review.
+1. Review preprocessing validation artifacts.
+2. Decide duplicate handling for feature aggregation.
+3. Confirm whether `search_query` should contribute features without raw query text.
+4. Decide whether `page_visit` should remain deferred for the MVP.
+5. Move to feature engineering only after preprocessing review.

@@ -1,0 +1,5 @@
+table_name,duplicate_key,valid_rows,duplicate_key_groups,duplicate_extra_rows,duplicate_extra_row_rate,status,notes
+add_to_cart,"client_id,event_ts,sku",7541117,121309,161493,0.021415,success,Aggregate duplicate check only; no duplicate rows are persisted in artifacts.
+remove_from_cart,"client_id,event_ts,sku",2688894,119656,153588,0.057119,success,Aggregate duplicate check only; no duplicate rows are persisted in artifacts.
+product_buy,"client_id,event_ts,sku",2318502,364491,380903,0.164288,success,Aggregate duplicate check only; no duplicate rows are persisted in artifacts.
+search_query,"client_id,event_ts",13223769,765447,787135,0.059524,success,Aggregate duplicate check only; no duplicate rows are persisted in artifacts.

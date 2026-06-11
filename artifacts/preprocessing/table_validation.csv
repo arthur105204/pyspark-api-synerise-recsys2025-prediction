@@ -1,0 +1,6 @@
+table_name,input_path,output_path,processed,validation_status,write_status,input_rows,valid_rows,invalid_rows,event_ts_null_count,event_ts_parse_failure_count,event_date_min,event_date_max,client_id_null_count,sku_null_count,url_null_count,sample_fraction,status,error_summary
+add_to_cart,data/raw/synerise_dataset/add_to_cart.parquet,data/processed/events/add_to_cart,True,success,success,7541117,7541117,0,0,0,2022-06-23,2022-12-08,0,0,,,success,
+remove_from_cart,data/raw/synerise_dataset/remove_from_cart.parquet,data/processed/events/remove_from_cart,True,success,success,2688894,2688894,0,0,0,2022-06-23,2022-12-08,0,0,,,success,
+product_buy,data/raw/synerise_dataset/product_buy.parquet,data/processed/events/product_buy,True,success,success,2318502,2318502,0,0,0,2022-06-23,2022-12-08,0,0,,,success,
+search_query,data/raw/synerise_dataset/search_query.parquet,data/processed/events/search_query,True,success,success,13223769,13223769,0,0,0,2022-06-23,2022-12-08,0,,,,success,
+product_properties,data/raw/synerise_dataset/product_properties.parquet,data/processed/product_properties_clean,True,success,success,1534050,1534050,0,,,,,,,,,success,

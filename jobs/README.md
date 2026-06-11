@@ -162,3 +162,81 @@ artifacts/eda/target_feasibility_notes.md
 ```
 
 Before moving to preprocessing, review the recommended MVP target, target window, eligible cohort definition, positive rate, repeat-purchase behavior, and leakage rules.
+
+## `02_preprocess_events.py`
+
+This job runs Phase 2 preprocessing for the purchase propensity MVP direction.
+
+It standardizes raw event tables into clean intermediate Parquet outputs using Spark:
+
+- parses `timestamp` into `event_ts`
+- derives `event_date`
+- adds `event_type`
+- standardizes common event columns
+- validates nulls and timestamp parse failures
+- computes aggregate duplicate checks
+- creates deduplicated product metadata with `sku`, `category`, and `price`
+
+It does not create final labels, feature tables, model inputs, batch predictions, or API outputs.
+
+### How to Run
+
+Default preprocessing processes the primary event tables and product metadata:
+
+```powershell
+python jobs/02_preprocess_events.py
+```
+
+Optional search preprocessing:
+
+```powershell
+python jobs/02_preprocess_events.py --include-search
+```
+
+Optional page-visit preprocessing:
+
+```powershell
+python jobs/02_preprocess_events.py --include-search --include-page-visit
+```
+
+WSL/Linux uses the same command from the project root:
+
+```bash
+python jobs/02_preprocess_events.py
+```
+
+`--sample-fraction` is for local development only and should not be used for final preprocessing.
+
+### Runtime Note
+
+The preprocessing job writes processed Parquet outputs with Spark `DataFrameWriter`. On Windows local Spark, Parquet writes may require a proper Hadoop/winutils setup. If local Windows Spark writer fails, run the job in WSL/Linux or configure Hadoop properly.
+
+### Preprocessing Outputs
+
+Default processed data outputs:
+
+```text
+data/processed/events/add_to_cart/
+data/processed/events/remove_from_cart/
+data/processed/events/product_buy/
+data/processed/product_properties_clean/
+```
+
+Optional processed data outputs:
+
+```text
+data/processed/events/search_query/
+data/processed/events/page_visit/
+```
+
+Sanitized aggregate artifacts:
+
+```text
+artifacts/preprocessing/preprocessing_summary.json
+artifacts/preprocessing/table_validation.csv
+artifacts/preprocessing/duplicate_check_summary.csv
+artifacts/preprocessing/product_metadata_validation.csv
+artifacts/preprocessing/preprocessing_notes.md
+```
+
+`data/processed/` is ignored by default and should not be committed.

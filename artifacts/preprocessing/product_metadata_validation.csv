@@ -1,0 +1,2 @@
+table_name,input_path,output_path,processed,validation_status,write_status,input_rows,output_rows,distinct_sku_count,duplicated_sku_count,duplicate_extra_rows,null_sku_count,null_category_count,null_price_count,null_name_count,dedup_rule,name_persisted,sample_fraction,status,error_summary
+product_properties,data/raw/synerise_dataset/product_properties.parquet,data/processed/product_properties_clean,True,success,success,1534050,1534050,1534050,0,0,0,0,0,0,group by sku and keep the most frequent category/price pair; ties sort by category and price,False,,success,

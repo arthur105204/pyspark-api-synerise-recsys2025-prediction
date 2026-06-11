@@ -1,0 +1,24 @@
+project:
+  name: pyspark_customer_behavior_scoring_api
+  mvp_target: purchase_propensity
+
+paths:
+  raw_base_path: data/raw/synerise_dataset
+  processed_base_path: data/processed
+  artifacts_base_path: artifacts
+
+columns:
+  client_id: client_id
+  timestamp: timestamp
+  event_timestamp: event_ts
+  event_date: event_date
+  product_id: sku
+  category: category
+  price: price
+
+target:
+  task: purchase_propensity
+  target_window_days: 30
+  eligible_cohort: add_to_cart_or_purchase_in_history
+  positive_definition: purchase_in_target_window
+  leakage_rule: features_before_cutoff_labels_in_target_window

@@ -2,7 +2,7 @@
 
 This project builds a PySpark-based customer behavior scoring pipeline from the Synerise RecSys 2025 dataset. The intended final flow is raw event logs, PySpark processing, EDA, feature engineering, simple model training, batch prediction output, and an API that can return prediction results for a user or client id.
 
-Current milestone: Phase 1.1: Business Target Selection EDA.
+Current milestone: Phase 2: Preprocessing.
 
 ## Folder Structure
 
@@ -12,9 +12,12 @@ docs/project_report.md            Mentor-facing project report
 jobs/00_inspect_raw_data.py        Raw data inspection job
 jobs/01_eda_summary.py             Phase 1 EDA summary job
 jobs/01b_target_feasibility_eda.py Phase 1.1 business target selection EDA job
+jobs/02_preprocess_events.py       Phase 2 preprocessing job
 jobs/README.md                    Job usage notes
 artifacts/metadata/               Small generated metadata summaries
 artifacts/eda/                    Generated EDA summaries
+artifacts/preprocessing/          Generated preprocessing validation summaries
+configs/pipeline_config.yaml      Pipeline target and path configuration
 ```
 
 ## Run the First Inspection Job
@@ -74,11 +77,53 @@ python jobs/01b_target_feasibility_eda.py
 
 This job compares purchase propensity, cart conversion, and purchase-based churn as candidate MVP scoring targets. It does not create final training labels.
 
+## Run Preprocessing
+
+Default preprocessing:
+
+```powershell
+python jobs/02_preprocess_events.py
+```
+
+Optional search preprocessing:
+
+```powershell
+python jobs/02_preprocess_events.py --include-search
+```
+
+The preprocessing job writes Spark Parquet outputs under:
+
+```text
+data/processed/events/add_to_cart/
+data/processed/events/remove_from_cart/
+data/processed/events/product_buy/
+data/processed/product_properties_clean/
+```
+
+If optional search preprocessing is enabled, it also writes:
+
+```text
+data/processed/events/search_query/
+```
+
+Preprocessing artifacts are written to:
+
+```text
+artifacts/preprocessing/preprocessing_summary.json
+artifacts/preprocessing/table_validation.csv
+artifacts/preprocessing/duplicate_check_summary.csv
+artifacts/preprocessing/product_metadata_validation.csv
+artifacts/preprocessing/preprocessing_notes.md
+```
+
+`data/processed/` is ignored by git and should not be committed.
+
 ## Current Status
 
 - The project direction is documented as customer behavior scoring from event logs.
-- Raw data inspection and Phase 1 EDA summary jobs are implemented.
-- Modeling and API code are intentionally not included in this milestone.
+- Raw inspection, EDA, business target selection, and preprocessing jobs are implemented.
+- The current MVP target remains purchase propensity with a provisional 30-day target window.
+- Feature engineering, final labels, modeling, batch scoring, and API code are intentionally not included in this milestone.
 - Raw data and large generated outputs are ignored by git.
 
 ## Agent Instructions
@@ -87,4 +132,4 @@ This repo includes `AGENTS.md` and a small set of Codex skills for data privacy,
 
 ## Next Step
 
-Review the EDA and business target selection findings, confirm the provisional purchase propensity target direction, then decide whether preprocessing can begin.
+Review the preprocessing validation artifacts, then decide whether Phase 3 feature engineering can begin.

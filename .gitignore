@@ -22,6 +22,12 @@ artifacts/*
 !artifacts/eda/purchase_frequency_summary.csv
 !artifacts/eda/active_cohort_comparison.csv
 !artifacts/eda/target_feasibility_notes.md
+!artifacts/preprocessing/
+!artifacts/preprocessing/preprocessing_summary.json
+!artifacts/preprocessing/table_validation.csv
+!artifacts/preprocessing/duplicate_check_summary.csv
+!artifacts/preprocessing/product_metadata_validation.csv
+!artifacts/preprocessing/preprocessing_notes.md
 outputs/
 models/
 *.model
