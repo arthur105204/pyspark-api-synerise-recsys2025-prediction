@@ -37,7 +37,9 @@
 | Label construction | Completed pending review | Spark label and training outputs generated with sanitized validation artifacts |
 | Modeling | Completed pending review | Baseline Spark ML model and sanitized aggregate metrics generated |
 | Batch scoring | Completed pending review | Spark score table and sanitized aggregate scoring artifacts generated |
-| API | Not started | Requires prediction table first |
+| API serving and demo interface | Not started | Lookup API, direct feature-input prediction, and demo UI are planned next |
+| Experiment tracking and tuning | Not started | Requires offline Spark model variant plan and sanitized experiment artifacts |
+| Load/stress testing and final packaging | Not started | Requires stable API/demo surface first |
 | Commit/push | Done | Stable foundation commit pushed to `origin/master` |
 
 ## 3. Phase Plan
@@ -539,75 +541,175 @@ Review Questions:
 Status:
 Completed pending review. `jobs/06_batch_score.py` generated `data/processed/scoring/purchase_propensity_scores/` and sanitized artifacts under `artifacts/scoring/`. The job scored 2,149,796 eligible clients, produced 516,759 predicted positives at threshold 0.5, and passed validation and leakage checks.
 
-### Phase 7: API Serving
+### Phase 7: API Serving & Demo Interface
 
 Goal:
-Expose prediction lookup by user/client id.
+Expose purchase propensity results through a lightweight serving layer and mentor-friendly demo interface.
 
 Guardrails:
 
-- API reads from prediction table, not raw data.
-- API does not run Spark per request.
+- API lookup mode reads from the exported batch score store, not raw data.
+- Direct manual prediction mode uses exported lightweight model metadata, not Spark inference.
+- API and UI do not run Spark training or heavy tuning by default.
 - Response schema must be stable.
 - Handle missing users clearly.
 - Do not expose sensitive data.
+- Do not commit real client IDs, row-level score examples, or the generated serving database.
+
+Subphases:
+
+- 7A: Batch score lookup API by `client_id`.
+- 7B: Direct manual feature-input prediction using exported Logistic Regression metadata.
+- 7C: Simple demo UI using Streamlit or a lightweight frontend.
 
 Verification/Test Steps:
 
-- Implement endpoint:
-  - `GET /users/{client_id}/prediction`
+- Implement lookup endpoints:
+  - `GET /health`
+  - `GET /metadata`
+  - `GET /scores/{client_id}`
+- Export serving scores from Phase 6 batch scores to SQLite.
+- Export lightweight model metadata:
+  - feature order
+  - imputation values
+  - coefficients
+  - intercept
+  - threshold
+- Planned job: `jobs/07_export_model_metadata.py`.
+- Implement manual feature-input prediction from the exported model metadata.
+- Implement demo UI for mentor review with:
+  - client score lookup
+  - manual feature-input prediction
+  - safe fake examples
 - Test valid user.
 - Test missing user.
-- Test invalid input.
+- Test missing database handling in the repository.
+- Test manual feature-input validation and prediction response.
 - Add minimal API tests.
 
 Definition of Done:
 
-- API returns prediction response.
+- Batch lookup API returns prediction response from SQLite.
+- Direct feature-input prediction returns likelihood to buy without Spark.
+- Demo UI supports lookup and manual feature-input workflows.
 - Error cases are handled.
+- SQLite lookup repository exists.
+- API does not run Spark or Spark ML inference per request.
+- Frontend does not trigger heavy Spark training by default.
+- Lightweight model metadata is sanitized and documented.
+- Generated SQLite serving DB is ignored and not committed.
+- Tests use fake client ids only.
 - README documents how to run API.
+- Demo instructions are documented.
 - Report includes example request/response.
 
 Review Questions:
 
 - Is the API contract stable?
+- Is manual feature input understandable for mentor review?
+- Which features should be shown in the demo form?
+- Should the demo use Streamlit or a lightweight frontend?
 - Is lookup fast enough?
 - Should cache be added?
 
 Status:
-Not started.
+Not started. Subphase 7A should begin with the serving score export job and lookup API contract. Subphases 7B and 7C are planned but not implemented.
 
-### Phase 8: Load/Stress Test and Cache
+### Phase 8: Experiment Tracking & Hyperparameter Tuning
 
 Goal:
-Evaluate API behavior under repeated requests.
+Train and compare offline model variants so mentor and project owner can select the preferred parameter set.
+
+Guardrails:
+
+- Train variants offline with Spark jobs only.
+- Do not train Spark models inside API request paths.
+- Do not let the frontend trigger heavy Spark training by default.
+- Do not commit raw predictions, real client IDs, model binaries, or row-level experiment output.
+- Keep experiment artifacts aggregate-only and sanitized.
+
+Verification/Test Steps:
+
+- Create `jobs/08_train_model_variants.py`.
+- Train variants over selected parameters:
+  - `regParam`
+  - `elasticNetParam`
+  - `maxIter`
+  - threshold
+  - class weighting on/off
+- Write sanitized artifacts under `artifacts/experiments/`.
+- Compare:
+  - ROC-AUC
+  - PR-AUC
+  - TopK precision, recall, and lift
+  - confusion matrix
+  - selected threshold
+- Track model version, parameter set, metrics, and review status.
+- Provide a comparison table for demo UI/reporting.
+
+Definition of Done:
+
+- Offline variant training job exists.
+- Experiment summary artifacts exist under `artifacts/experiments/`.
+- Each variant has parameters, metrics, and model version metadata.
+- Best candidate and threshold are selected or marked for mentor review.
+- No raw predictions, real client IDs, or model binaries are committed.
+- Report and README document how variants are compared.
+
+Review Questions:
+
+- Which metric should drive model selection: PR-AUC, TopK lift, recall, or precision?
+- Which threshold is best for the mentor demo?
+- Should class weighting remain enabled?
+- Which parameter set should become the next model version?
+
+Status:
+Not started.
+
+### Phase 9: Load/Stress Testing, Final Report, and Demo Packaging
+
+Goal:
+Validate demo performance, document the system architecture, and package the final mentor review flow.
 
 Guardrails:
 
 - Do not optimize before measuring.
 - Do not add Redis/cache unless a clear reason exists.
-- Record test settings and results.
+- Do not expose real client IDs or row-level sensitive examples.
+- Use fake examples for documentation and screenshots.
+- Keep final report mentor-facing and neutral.
 
 Verification/Test Steps:
 
-- Use Locust, k6, or a simple load script.
+- Use Locust, k6, or a simple load script for API lookup.
 - Measure:
   - RPS
   - average latency
   - p95 latency
   - error rate
-- Compare no-cache vs cache if implemented.
+- Compare no-cache vs cache only if cache is implemented.
+- Document architecture:
+  - Spark pipeline
+  - batch scoring
+  - SQLite serving export
+  - API lookup
+  - manual feature-input path
+  - demo UI
+- Prepare mentor demo flow and final project report updates.
 
 Definition of Done:
 
-- Load test result is recorded.
-- Bottlenecks are noted.
-- Report includes performance summary.
+- Load/stress test result is recorded.
+- Bottlenecks and limitations are noted.
+- Demo instructions are complete.
+- Final report summarizes each phase and review decisions.
+- No sensitive data or local runtime details are included.
 
 Review Questions:
 
 - Is API performance enough for demo?
 - Is cache necessary?
+- Is the demo flow clear for mentor review?
 - What should be improved if this were production?
 
 Status:
@@ -615,9 +717,11 @@ Not started.
 
 ## 4. Immediate Next Actions
 
-1. Review generated scoring artifacts under `artifacts/scoring/`.
-2. Confirm score output row count, score range, duplicate checks, and schema.
-3. Decide whether Phase 7 should proceed to API serving.
+1. Start Phase 7A by implementing `jobs/07_export_serving_scores.py` and running `python jobs/07_export_serving_scores.py --limit 100000` in WSL/Linux or a properly configured Spark runtime.
+2. Review the lookup API contract before implementation.
+3. Plan Phase 7B lightweight model metadata export for manual feature-input prediction.
+4. Decide whether the demo UI should use Streamlit or a lightweight frontend.
+5. Keep Phase 8 offline tuning separate from API/demo implementation.
 
 ## 5. Agent Instruction Setup
 

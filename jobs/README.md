@@ -561,3 +561,99 @@ This job does not implement API serving, create an online endpoint, retrain a mo
 ### Batch Scoring Runtime Note
 
 The scoring job uses Spark to read feature Parquet inputs, load the Spark ML model, and write score Parquet outputs. On Windows local Spark, reading or writing local Parquet/model directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.
+
+## Planned Phase 7/8 Jobs
+
+The following jobs are planned for the next product/demo phases. They are listed here to keep the implementation plan explicit; they are not required to run until their phase starts.
+
+### `07_export_serving_scores.py`
+
+Planned Phase 7A job for exporting Phase 6 batch scores to a local SQLite lookup store for the Phase 7 API.
+
+Input:
+
+- `data/processed/scoring/purchase_propensity_scores/`
+
+Output:
+
+- `data/serving/purchase_propensity_scores.sqlite`
+
+SQLite table:
+
+```sql
+CREATE TABLE scores (
+  client_id TEXT PRIMARY KEY,
+  prediction_score REAL NOT NULL,
+  prediction_label INTEGER NOT NULL,
+  model_version TEXT NOT NULL,
+  scored_at TEXT NOT NULL
+);
+```
+
+The job should create an index on `client_id` for lookup.
+
+### How to Run
+
+Planned full export:
+
+```powershell
+python jobs/07_export_serving_scores.py
+```
+
+Planned local demo export:
+
+```powershell
+python jobs/07_export_serving_scores.py --limit 100000
+```
+
+Optional arguments:
+
+```powershell
+python jobs/07_export_serving_scores.py --input-path data/processed/scoring/purchase_propensity_scores --output-db data/serving/purchase_propensity_scores.sqlite --limit 100000 --batch-size 10000
+```
+
+WSL/Linux uses the same command from the project root:
+
+```bash
+python jobs/07_export_serving_scores.py --limit 100000
+```
+
+The generated SQLite database is local serving data and should not be committed. The job should not create row-level artifacts under `artifacts/`.
+
+### `07_export_model_metadata.py`
+
+Planned Phase 7B job for exporting lightweight Logistic Regression metadata for direct manual feature-input prediction.
+
+Planned output:
+
+- feature order
+- imputation values
+- coefficients
+- intercept
+- chosen threshold
+
+This export should be sanitized and small enough for API/UI use. It should not include raw rows, real client IDs, raw predictions, model training data, or local runtime paths. The API/UI can use this metadata to compute a logistic sigmoid score without loading Spark or running Spark ML inside a request path.
+
+### `08_train_model_variants.py`
+
+Planned Phase 8 job for offline Spark model variant training and experiment comparison.
+
+Planned variant parameters:
+
+- `regParam`
+- `elasticNetParam`
+- `maxIter`
+- threshold
+- class weighting on/off
+
+Planned artifacts:
+
+- sanitized aggregate metrics under `artifacts/experiments/`
+- model version metadata
+- parameter summary
+- ROC-AUC and PR-AUC
+- TopK precision, recall, and lift
+- confusion matrix
+- selected threshold or mentor review status
+
+This job should run offline. It should not be called by API request paths or by the demo UI as a default action, and it should not commit raw predictions, real client IDs, model binaries, or row-level experiment output.

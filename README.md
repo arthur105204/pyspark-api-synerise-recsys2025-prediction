@@ -1,8 +1,8 @@
 # PySpark Customer Behavior Scoring API
 
-This project builds a PySpark-based customer behavior scoring pipeline from the Synerise RecSys 2025 dataset. The intended final flow is raw event logs, PySpark processing, EDA, feature engineering, simple model training, batch prediction output, and an API that can return prediction results for a user or client id.
+This project builds a PySpark-based customer behavior scoring pipeline from the Synerise RecSys 2025 dataset. The intended final flow is raw event logs, PySpark processing, EDA, feature engineering, simple model training, batch prediction output, and a demo-ready serving layer that can return prediction results from batch scores or from manually entered feature values.
 
-Current milestone: Phase 4: Label Construction.
+Current milestone: Phase 7: API Serving & Demo Interface.
 
 ## Folder Structure
 
@@ -15,12 +15,16 @@ jobs/01b_target_feasibility_eda.py Phase 1.1 business target selection EDA job
 jobs/02_preprocess_events.py       Phase 2 preprocessing job
 jobs/03_build_features.py          Phase 3 feature engineering job
 jobs/04_build_labels.py            Phase 4 label construction job
+jobs/05_train_baseline_model.py    Phase 5 baseline modeling job
+jobs/06_batch_score.py             Phase 6 batch scoring job
 jobs/README.md                    Job usage notes
 artifacts/metadata/               Small generated metadata summaries
 artifacts/eda/                    Generated EDA summaries
 artifacts/preprocessing/          Generated preprocessing validation summaries
 artifacts/features/               Generated feature validation summaries
 artifacts/labels/                 Generated label validation summaries
+artifacts/modeling/               Generated aggregate modeling summaries
+artifacts/scoring/                Generated aggregate scoring summaries
 configs/pipeline_config.yaml      Pipeline target and path configuration
 ```
 
@@ -254,15 +258,64 @@ artifacts/scoring/scoring_notes.md
 
 `data/processed/` and `data/models/` are ignored by git and should not be committed. This phase creates batch scores only. It does not implement API serving or an online inference endpoint.
 
+## Planned API Serving / Lookup Layer
+
+Planned Phase 7A command to export batch scores to a local SQLite lookup store:
+
+```powershell
+python jobs/07_export_serving_scores.py --limit 100000
+```
+
+Planned API command:
+
+```powershell
+uvicorn api.main:app --reload
+```
+
+Planned API test command:
+
+```powershell
+python -m pytest tests/test_api_scores.py tests/test_serving_repository.py
+```
+
+The planned API lookup store is:
+
+```text
+data/serving/purchase_propensity_scores.sqlite
+```
+
+`data/serving/` is ignored by git and should not be committed. The planned API is a lookup layer over exported batch scores; it should not run Spark or model inference per request.
+
+## Roadmap
+
+Completed phases:
+
+- Phase 0 raw inspection
+- Phase 1 general EDA
+- Phase 1.1 business target selection
+- Phase 2 preprocessing
+- Phase 3 feature engineering
+- Phase 4 label construction
+- Phase 5 baseline modeling
+- Phase 6 batch scoring
+
+Upcoming phases:
+
+- Phase 7 API Serving & Demo Interface: support batch score lookup by `client_id`, direct manual feature-input prediction from lightweight exported Logistic Regression parameters, and a simple mentor-facing demo UI.
+- Phase 8 Experiment Tracking & Hyperparameter Tuning: train model variants offline with Spark, write sanitized aggregate experiment artifacts, and compare metrics and parameters in a reviewable dashboard or report view.
+- Phase 9 Load/Stress Testing, Final Report, and Demo Packaging: test API lookup performance, document the architecture, and prepare the final mentor demo flow.
+
+The next phase is not only an API lookup endpoint. The demo plan includes both `client_id` lookup and manual feature input. Training and tuning remain offline jobs and should not run inside API request paths or default UI actions.
+
 ## Current Status
 
 - The project direction is documented as customer behavior scoring from event logs.
-- Raw inspection, EDA, business target selection, preprocessing, feature engineering, label construction, baseline modeling, and batch scoring jobs are implemented.
+- Raw inspection, EDA, business target selection, preprocessing, feature engineering, label construction, baseline modeling, and batch scoring are implemented.
 - The current MVP target is purchase propensity with a 30-day target window.
 - Phase 4 label construction has generated aggregate validation artifacts and local processed Spark Parquet outputs.
 - Phase 5 baseline modeling has generated a local Spark ML model and sanitized aggregate modeling artifacts.
 - Phase 6 batch scoring has generated a local score table and sanitized aggregate scoring artifacts.
-- API code is intentionally not included in this milestone.
+- Phase 7 API/demo work is planned next. The full SQLite export should run in WSL/Linux or another Spark runtime that can read the local score Parquet output.
 - Raw data and large generated outputs are ignored by git.
 
 ## Agent Instructions
@@ -271,4 +324,4 @@ This repo includes `AGENTS.md` and a small set of Codex skills for data privacy,
 
 ## Next Step
 
-Review the Phase 6 scoring artifacts, then decide whether Phase 7 API serving should begin.
+Finish Phase 7A serving export in WSL/Linux or a properly configured Spark runtime, then plan Phase 7B lightweight model metadata export and Phase 7C demo UI before starting offline tuning.
