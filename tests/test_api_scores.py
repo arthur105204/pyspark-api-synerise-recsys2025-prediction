@@ -40,7 +40,7 @@ def test_metadata_endpoint(tmp_path: Path) -> None:
         assert payload["target_window_days"] == 30
         assert payload["model_version"] == "baseline_lr_v1"
         assert payload["score_source"] == "batch_scoring"
-        assert payload["api_mode"] == "lookup"
+        assert payload["api_mode"] == "lookup_and_manual_prediction"
     finally:
         app.dependency_overrides.clear()
 

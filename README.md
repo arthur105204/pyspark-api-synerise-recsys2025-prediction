@@ -260,10 +260,16 @@ artifacts/scoring/scoring_notes.md
 
 ## Run API Serving / Lookup Layer
 
-Phase 7A exports batch scores to a local SQLite lookup store. The current Windows runtime fails while Spark reads the local Parquet score output, while the WSL limited demo export succeeded with 100000 rows:
+Phase 7A exports batch scores to a local SQLite lookup store. The API/cache demo export contains 500000 rows. The current Windows runtime fails while Spark reads the local Parquet score output, so run or refresh the export in WSL/Linux or a properly configured Spark runtime:
 
 ```powershell
-python jobs/07_export_serving_scores.py --limit 100000
+python jobs/07_export_serving_scores.py --limit 500000
+```
+
+Export lightweight model metadata for manual feature-input prediction:
+
+```powershell
+python jobs/07_export_model_metadata.py
 ```
 
 Run the API:
@@ -275,7 +281,7 @@ uvicorn api.main:app --reload
 Run API tests:
 
 ```powershell
-python -m pytest tests/test_api_scores.py tests/test_serving_repository.py
+python -m pytest tests/
 ```
 
 The API lookup store is:
@@ -285,6 +291,14 @@ data/serving/purchase_propensity_scores.sqlite
 ```
 
 `data/serving/` is ignored by git and should not be committed. The API is a lookup layer over exported batch scores; it does not run Spark or model inference per request.
+
+Manual feature-input prediction is available through:
+
+```http
+POST /predict
+```
+
+The API loads lightweight local model metadata and computes the Logistic Regression sigmoid directly without Spark in the request path.
 
 ## Roadmap
 
@@ -301,7 +315,7 @@ Completed phases:
 
 Upcoming phases:
 
-- Phase 7 API Serving & Demo Interface: Phase 7A supports batch score lookup by `client_id`; Phase 7B direct manual feature-input prediction and Phase 7C demo UI are planned next.
+- Phase 7 API Serving & Demo Interface: Phase 7A supports batch score lookup by `client_id`; Phase 7B supports direct manual feature-input prediction; Phase 7C demo UI is planned next.
 - Phase 8 Experiment Tracking & Hyperparameter Tuning: train model variants offline with Spark, write sanitized aggregate experiment artifacts, and compare metrics and parameters in a reviewable dashboard or report view.
 - Phase 9 Load/Stress Testing, Final Report, and Demo Packaging: test API lookup performance, document the architecture, and prepare the final mentor demo flow.
 
@@ -315,7 +329,7 @@ The next phase is not only an API lookup endpoint. The demo plan includes both `
 - Phase 4 label construction has generated aggregate validation artifacts and local processed Spark Parquet outputs.
 - Phase 5 baseline modeling has generated a local Spark ML model and sanitized aggregate modeling artifacts.
 - Phase 6 batch scoring has generated a local score table and sanitized aggregate scoring artifacts.
-- Phase 7A lookup API scaffold, fake-data tests, and WSL limited demo SQLite export are implemented.
+- Phase 7A lookup API scaffold, Phase 7B manual prediction API, and the 500000-row local serving DB export are implemented.
 - Raw data and large generated outputs are ignored by git.
 
 ## Agent Instructions
@@ -324,4 +338,4 @@ This repo includes `AGENTS.md` and a small set of Codex skills for data privacy,
 
 ## Next Step
 
-Review the Phase 7A lookup API against the generated SQLite database before starting Phase 7B manual feature-input prediction or Phase 7C demo UI.
+Review the lookup and manual prediction API before starting Phase 7C demo UI.

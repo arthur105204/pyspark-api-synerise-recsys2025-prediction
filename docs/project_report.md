@@ -1,25 +1,43 @@
 # PySpark Customer Behavior Scoring Project
 
+## Executive Summary
+
+This project is a production-like MVP pipeline for customer behavior scoring on the Synerise event log dataset. The current end-to-end path is:
+
+```text
+Synerise event logs
+-> PySpark processing
+-> user-level features
+-> purchase propensity label
+-> Spark ML baseline model
+-> batch score table
+-> FastAPI/SQLite lookup API
+-> manual lightweight prediction path
+-> sanitized demo/testing artifacts
+```
+
+The MVP is not a full production deployment. Its main purpose is to practice the production workflow: scalable data processing, leakage-safe feature and label construction, baseline modeling, batch scoring, API serving, documentation, and privacy controls. The current milestone is Phase 7: API Serving & Demo Interface. The lookup API and manual prediction endpoint are implemented locally; demo UI, load/stress testing, external deployment, authentication, and production monitoring remain pending.
+
 ## 1. Problem Statement
 
 Customer behavior scoring means converting customer activity records into user-level signals that can support prediction. Event logs can be aggregated into features such as visit frequency, cart activity, purchase behavior, search activity, recency, and interaction trends.
 
-The project aims to build a customer behavior scoring pipeline from event logs. The pipeline will use PySpark to inspect, process, and aggregate behavioral data into user-level features. The MVP will focus on a simple prediction task first, then later expose prediction results through an API.
+The project builds a customer behavior scoring pipeline from event logs. The pipeline uses PySpark to inspect, process, and aggregate behavioral data into user-level features. The MVP has implemented a purchase propensity prediction path through batch scoring and a local API serving layer.
 
-The planned final outcome is a practical pipeline that can process customer behavior data, create user-level features, train a simple model, generate batch prediction results, and support API lookup by user/client id.
+The current outcome is a practical local pipeline that can process customer behavior data, create user-level features, train a simple model, generate batch prediction results, serve lookup scores by user/client id, and compute manual feature-input predictions using lightweight exported Logistic Regression metadata.
 
 ## 2. Why This Project Matters
 
 Behavior scoring is useful because it turns raw interaction history into prediction-ready information. It can support customer churn prediction, propensity scoring, campaign targeting, personalized user analysis, and a user-level prediction API.
 
-From an engineering perspective, the project is also useful because it practices scalable data processing on event logs, including schema inspection, joins, aggregations, feature creation, batch scoring, and later API serving.
+From an engineering perspective, the project is also useful because it practices scalable data processing on event logs, including schema inspection, joins, aggregations, feature creation, batch scoring, and local API serving.
 
 ## 3. Project Direction
 
 Chosen direction:
 Customer behavior scoring from event logs.
 
-Expected final direction:
+Current MVP direction:
 
 ```text
 Raw event logs
@@ -30,9 +48,26 @@ Raw event logs
 -> model training
 -> batch prediction table
 -> API lookup
+-> manual feature-input prediction
 ```
 
-The first version stays MVP-focused before adding advanced recommendation, embedding, or challenge-reproduction methods.
+The first version stays MVP-focused before adding advanced recommendation, embedding, challenge-reproduction methods, external deployment, or production hardening.
+
+## Current Status by Phase
+
+| Phase | Status | Main tool | Output | Review point |
+| ----- | ------ | --------- | ------ | ------------ |
+| Raw inspection / EDA | Done | PySpark, Parquet metadata | Sanitized schema, row count, null, and timestamp artifacts | Confirm data coverage and core entities |
+| Business target selection EDA | Done | PySpark aggregate analysis | Purchase propensity selected with 30-day target window | Confirm target is business-appropriate |
+| Preprocessing | Done | PySpark DataFrame transforms | Clean event/product Parquet tables | Review duplicate handling and deferred `page_visit` |
+| Feature engineering | Done | PySpark aggregations and joins | 36 user-level features | Review feature sufficiency and null strategy |
+| Label construction | Done | PySpark time-window joins | Purchase propensity labels and training dataset | Review cutoff/window boundary policy |
+| Baseline modeling | Done | Spark ML Logistic Regression | Baseline model and aggregate metrics | Review threshold and false-positive trade-off |
+| Batch scoring | Done | Spark ML batch transform | Local score table with stable serving schema | Review score distribution and refresh cadence |
+| API lookup / manual prediction | Implemented | FastAPI, SQLite, lightweight LR metadata | `GET /scores/{client_id}` and `POST /predict` | Review local API contract and demo behavior |
+| Demo UI | Not done yet | Streamlit or lightweight frontend, TBD | No UI artifact yet | Choose demo approach |
+| Load/stress testing | Not done yet | k6, Locust, or simple script, TBD | No performance report yet | Define API/cache test target |
+| External deployment/auth/Redis | Out of MVP or pending | External infrastructure, TBD | Not implemented | Future hardening only |
 
 ## 4. Dataset Understanding
 
@@ -59,11 +94,11 @@ What is known so far:
 - The EDA job was rerun in full-count mode, and all six Spark-readable Parquet tables were counted successfully.
 - The metadata artifact is intentionally sanitized. It records table-level schema and size information only, without absolute local paths or row-level data.
 
-What still needs to be verified:
+What has been verified beyond raw inspection:
 
-- Duplicate behavior, skew, and unusual values: To be verified during preprocessing or targeted follow-up EDA.
-- Target/label availability: To be verified.
-- Whether the provisional purchase propensity target remains best after preprocessing validation.
+- Duplicate behavior was profiled in preprocessing artifacts and remains a policy review point.
+- Purchase propensity labels were constructed with a leakage-safe cutoff and target window.
+- The 30-day purchase propensity target was carried through feature engineering, modeling, batch scoring, and local API serving.
 
 Potential entities to look for during inspection:
 
@@ -73,7 +108,7 @@ Potential entities to look for during inspection:
 - timestamp
 - target/label if available
 
-Initial schemas, exact row counts, timestamp parsing, and tracked null counts are verified by EDA. Duplicate/skew checks and modeling labels remain TBD.
+Initial schemas, exact row counts, timestamp parsing, tracked null counts, feature tables, labels, baseline model, batch scores, and local serving artifacts are available. Remaining work is focused on demo UI, load/stress testing, threshold review, optional tuning, and deployment hardening.
 
 ## 5. Why PySpark Is Used
 
@@ -88,6 +123,22 @@ Spark concepts planned for this project include:
 - aggregations
 - window-based features
 - batch scoring
+
+## Tooling and Design Rationale
+
+| Tool / approach | Used in phase | Why used | Alternative | Why not alternative / trade-off |
+| --------------- | ------------- | -------- | ----------- | ------------------------------- |
+| PySpark | EDA, preprocessing, feature engineering, label construction, modeling, batch scoring | Handles large event logs better than Pandas, supports distributed-style DataFrame processing even in local mode, and fits the internship goal of scalable data workflow practice | Pandas | Pandas is simpler for small data, but less appropriate for large joins, aggregations, and production-like event processing. Spark has more overhead and debugging complexity. |
+| Parquet | Raw, processed, feature, label, training, and score tables | Columnar, schema-aware, efficient with Spark, and better suited to analytical workloads than row text formats | CSV | CSV is easy to inspect manually, but slower, less type-safe, and less efficient for Spark workloads. |
+| Spark ML Logistic Regression | Baseline modeling | Simple, explainable, built into Spark ML, and produces probability scores usable for ranking and TopK targeting | RandomForest, GBT, XGBoost, deep models | More complex models may capture nonlinear behavior, but they add complexity. Logistic Regression is a faster, clearer MVP baseline. |
+| Median imputation | Model input preparation | Keeps rows with missing numeric values and is more robust than mean for skewed features | Drop rows, mean imputation, constant fill, missing indicators | Median imputation can hide missingness signal. Missing indicators or more explicit null handling are future improvements. |
+| Class weights | Baseline modeling | The positive label rate is low, so class weights reduce the risk of a model that mostly predicts the negative class | Resampling, threshold tuning only, anomaly-style modeling | Class weights improve recall but can increase false positives. Threshold selection remains a review point. |
+| Batch scoring | Serving preparation | Keeps API fast and simple by precomputing scores offline and avoiding Spark/model inference per request | Realtime Spark inference | Realtime inference can be fresher but is heavier, slower, and harder to operate for this MVP. Batch scores can become stale until refresh. |
+| SQLite | Local lookup serving store | Lightweight local store for MVP API lookup and tests without external infrastructure | Postgres, Redis, cloud database | SQLite is not a production high-concurrency multi-instance serving database, but it is appropriate for local demo and API contract validation. |
+| FastAPI | API layer | Lightweight Python framework with clear request/response models, health/metadata endpoints, and easy testability | Flask, Django, Node/Fastify | FastAPI is suitable for this MVP, but production still needs auth, deployment, monitoring, rate limiting, and access control. |
+| Lightweight model metadata | Manual feature-input prediction | Allows API to compute Logistic Regression sigmoid directly from feature order, imputation values, coefficients, intercept, and threshold without Spark in the request path | Loading Spark ML model inside API | Spark in request handlers would be heavy and operationally fragile for a local API. Metadata export requires careful versioning and validation. |
+| 500000-row local serving export | API/cache demo preparation | Provides a larger local lookup dataset for API/cache assignment testing while keeping row-level data ignored by git | Full production database export or tiny sample only | Larger local export is useful for demo testing, but it is still local data and not a production serving store. |
+| Markdown report | Mentor-facing documentation | Keeps decisions, metrics, artifacts, privacy notes, and limitations in one reviewable source of truth | Many small documents | A single report can become long, so it needs clear sections and review-oriented summaries. |
 
 ## 6. Planned Pipeline
 
@@ -122,8 +173,8 @@ Alternatives considered:
 - Universal behavioral embedding
 - Churn/propensity scoring
 
-Default choice:
-Use business target selection EDA to choose the MVP target. Current provisional choice is purchase propensity with a 30-day target window.
+Implemented choice:
+Business target selection EDA was used to choose the MVP target. The implemented target is purchase propensity with a 30-day target window.
 
 ### Decision 2: Dataset
 
@@ -154,6 +205,7 @@ MVP:
 - Purchase propensity model
 - Batch prediction table
 - Simple API lookup
+- Manual feature-input prediction from lightweight model metadata
 
 Out of scope for MVP:
 
@@ -161,6 +213,8 @@ Out of scope for MVP:
 - Full RecSys challenge reproduction
 - Real-time Spark serving
 - Distributed cluster deployment
+- External production database deployment
+- Authentication, access control, and production monitoring
 
 ### Decision 5: Data Packaging and Ingestion
 
@@ -276,6 +330,12 @@ Input tables:
 Process:
 The EDA job reads the raw Parquet tables with PySpark in local mode, computes sanitized table-level metrics, and writes structured outputs without row-level samples. The job was rerun in full-count mode.
 
+EDA approach:
+EDA was used not only to look at the data, but also to decide whether the project is feasible as a Spark workflow and what later phases should build. The job inspects schemas, row counts, approximate distinct counts, null counts for core columns, timestamp parse success, timestamp min/max values, product price summaries, and sanitized table/column artifacts. These checks inform the target definition, feature plan, privacy boundary, and runtime strategy.
+
+Safe mode vs full count:
+The first inspection used safe-mode behavior and size thresholds to avoid accidentally triggering expensive Spark actions on large files. Safe mode did not mean the data was unreadable. After confirming schemas and file readability, the full-count EDA job was executed intentionally to collect exact table-level statistics. This is a cautious workflow for large local data: inspect cheaply first, then run heavier actions deliberately.
+
 Output artifacts:
 
 - `artifacts/eda/eda_summary.json`
@@ -285,6 +345,9 @@ Output artifacts:
 - `artifacts/eda/column_overview.csv`
 
 The EDA artifacts were split into compact general overview and schema-specific views to avoid sparse columns across heterogeneous input tables.
+
+Why table-level and column-level summaries:
+Table-level summaries explain whether each dataset is readable and large enough for modeling. Column-level summaries explain whether core identifiers, timestamps, event keys, and null patterns are suitable for feature construction. This avoids relying on raw samples, which would be less privacy-safe and less representative for large event logs.
 
 Key findings:
 
@@ -429,6 +492,9 @@ Primary inputs were `product_buy` and `add_to_cart`. `page_visit` and `search_qu
 Process:
 The job evaluated 14-day, 30-day, and 45-day target windows using aggregate-only PySpark operations. It computed eligible clients, positive clients, negative clients, positive rate, implementation complexity, business value, and simple recommendation ranks. It did not write final labels or client-level outputs.
 
+Why this approach:
+Target selection was handled as aggregate EDA before label construction so the team could compare business usefulness, class balance, and implementation complexity before committing to a supervised task. The alternative was to pick churn or purchase propensity by intuition, but that would make the label choice harder to defend in mentor review.
+
 Target window comparison:
 
 | Target days | History start | Cutoff date | Target end | History days |
@@ -485,6 +551,9 @@ Open questions before preprocessing/feature engineering:
 - Should duplicate and skew checks be added in preprocessing or targeted follow-up EDA?
 - Should class imbalance handling be planned during modeling?
 
+Review / limitation:
+The selected 30-day purchase propensity target is now implemented through modeling and serving, but target choice remains a business review point. The 45-day window and cart conversion target remain reasonable alternatives if mentor feedback prioritizes a different action window or narrower campaign use case.
+
 ## Preprocessing Milestone Summary
 
 Objective:
@@ -504,6 +573,9 @@ Deferred input:
 
 Process:
 The preprocessing job reads raw Parquet tables with PySpark, parses event timestamps, creates `event_ts` and `event_date`, adds an `event_type`, validates required columns, checks aggregate duplicate rates, and writes cleaned intermediate Parquet outputs with Spark. Product metadata is cleaned into modeling-safe columns only: `sku`, `category`, and `price`.
+
+Why this approach:
+Preprocessing uses Spark DataFrames because the event tables are large and later phases depend on consistent schemas, parsed timestamps, and repeatable Parquet outputs. Product names and raw query text are excluded from shared outputs to reduce privacy exposure. The alternative was to clean data ad hoc inside feature engineering, but a separate preprocessing step makes validation and review easier.
 
 Output data:
 
@@ -560,6 +632,9 @@ Open questions:
 - Should `page_visit` stay deferred for the MVP or be included after resource review?
 - Are `sku`, `category`, and `price` sufficient product metadata columns for the first feature set?
 
+Review / limitation:
+The duplicate policy is still a review point. Current features count processed rows as behavior, which may be correct if repeated events indicate intensity, but may overstate behavior if duplicates are system artifacts. `page_visit` remains deferred for MVP scope and runtime control.
+
 Next decision before feature engineering:
 Approve the cleaned event/product tables and duplicate handling strategy before moving to Phase 3 feature engineering.
 
@@ -592,6 +667,9 @@ Feature groups generated:
 - Product metadata features using category and price from cleaned product metadata.
 - Windowed 30-day, 60-day, and 90-day lookback count features.
 - Eligible cohort indicator for the later purchase propensity label construction step.
+
+Why this approach:
+The feature set emphasizes interpretable recency, frequency, product, and search activity signals because they are explainable and can be built with Spark aggregations. More advanced alternatives such as embeddings, sequence models, or session modeling could capture richer behavior but would increase complexity before the baseline serving path is validated.
 
 Output feature table:
 
@@ -640,6 +718,9 @@ Review questions after feature engineering:
 - Should `page_visit` remain deferred for the MVP?
 - Should missing recency and ratio values stay null or be filled during modeling preparation?
 
+Review / limitation:
+The current 36 features are sufficient for a baseline MVP, but they are not a final feature set. Missingness itself may carry useful signal, and future iterations can add missing indicators, page-visit features, or richer temporal/session features.
+
 Next decision before modeling:
 Review the generated labels and confirm whether the current feature table is sufficient for baseline modeling.
 
@@ -656,6 +737,9 @@ Input event table:
 
 Process:
 The label job selects eligible clients from the Phase 3 feature table, reads target-window purchase events, aggregates purchases to one binary label row per client, and joins labels back to the eligible feature rows to create a training-ready dataset.
+
+Why this approach:
+The label uses a fixed cutoff date and future purchase window to keep historical features separated from target behavior. This makes the task explainable: predict whether an active client will buy in the next 30 days. The alternative was to use churn or cart conversion first, but purchase propensity has broader coverage and supports user ranking for campaigns.
 
 Cutoff date:
 `2022-11-09`
@@ -711,8 +795,11 @@ Feature nulls are preserved from Phase 3. Model-stage imputation is deferred to 
 Interpretation:
 The 30-day purchase propensity label is now available for the eligible cohort. The positive rate is low but usable for a baseline classification task, and the generated validation artifacts support moving to a modeling review gate.
 
+Review / limitation:
+The label is suitable for the MVP baseline, but it uses one cutoff. A stronger production evaluation would test multiple time-based cutoffs. Upstream duplicate policy also remains important because duplicate events can affect feature values even when the label table has one row per client.
+
 Next step:
-Baseline modeling after mentor review of the label definition, class balance, leakage checks, and null strategy.
+The label has already been used for baseline modeling. Remaining review points are boundary policy, class balance, and whether additional time-based backtesting is needed.
 
 ## Baseline Modeling Milestone Summary
 
@@ -743,6 +830,9 @@ Median imputation for 36 numeric model input columns.
 
 Class imbalance handling:
 Class weights are enabled because the Phase 4 positive rate is 0.043546.
+
+Why this approach:
+Spark ML Logistic Regression is used as the first model because it is fast, explainable, built into Spark, and produces probability scores that can be ranked for targeting. Median imputation keeps sparse user histories in the dataset. Class weights address the low positive rate, while keeping the training process simple enough for mentor review.
 
 Evaluation metrics:
 
@@ -793,8 +883,11 @@ The Phase 5 baseline modeling job completed successfully. The ROC-AUC indicates 
 Limitations:
 A single random split is acceptable for the MVP baseline. A future improvement should evaluate time-based backtesting over multiple cutoffs. The threshold `0.5` favors recall but creates many false positives, so operating threshold selection should be reviewed before production scoring. TopK metrics are computed with Spark ordering plus `limit()` for each K slice and are kept as aggregate artifacts only.
 
+Modeling interpretation for review:
+ROC-AUC measures ranking ability across thresholds. PR-AUC is more informative than accuracy because the positive class is sparse. The confusion matrix at threshold `0.5` shows the operating behavior of the current default threshold: recall is high, but false positives are also high. TopK metrics matter because a business campaign usually contacts only the highest-ranked users, not every user above a generic probability threshold. Threshold selection is therefore a product and mentor review point, not just a modeling detail.
+
 Next step:
-Review the baseline metrics, then prepare Phase 6 batch scoring if the model quality and targeting lift are acceptable.
+The baseline model has already been used for batch scoring. Remaining review points are threshold choice, TopK targeting objective, and whether optional model variants should be compared later.
 
 ## Batch Scoring Milestone Summary
 
@@ -824,8 +917,14 @@ Score columns:
 - `model_version`
 - `scored_at`
 
+Stable scoring schema:
+The serving-facing score table keeps a stable schema because downstream API clients rely on consistent field names and types. `prediction_score` is the class-1 purchase propensity probability. `prediction_label` is the thresholded decision. `model_version` and `scored_at` provide traceability for refreshes and model comparisons. This schema helps avoid breaking changes when the serving layer or demo UI reads score records.
+
 Process:
 The batch scoring job loads the Phase 5 Spark ML model, applies it to the eligible Phase 3 feature rows, extracts the class-1 probability as `prediction_score`, applies the configured threshold for `prediction_label`, and writes a local Spark Parquet score table.
+
+Why this approach:
+Batch scoring is used before API serving so scores are computed offline and served through fast lookup. This avoids running Spark or model inference per request. The alternative is realtime model inference, but that would be heavier and less suitable for the local MVP. The trade-off is freshness: scores are only as current as the latest batch refresh.
 
 Artifacts:
 
@@ -878,7 +977,7 @@ Current result:
 The Phase 6 batch scoring job completed successfully. It generated one score row per eligible client and produced aggregate scoring artifacts suitable for review.
 
 Next step:
-Review the score output schema and aggregate score distribution before API serving or lookup-layer work begins.
+The score table has already been used for local API lookup serving. Remaining review points are score refresh cadence, threshold choice, and whether the 500000-row local serving export is sufficient for API/cache testing.
 
 ## API Serving Milestone Summary
 
@@ -899,6 +998,7 @@ API endpoints:
 - `GET /health`
 - `GET /metadata`
 - `GET /scores/{client_id}`
+- `POST /predict`
 
 Response fields:
 
@@ -908,20 +1008,29 @@ Response fields:
 - `model_version`
 - `scored_at`
 
+Manual prediction response fields:
+
+- `prediction_score`
+- `prediction_label`
+- `decision`
+- `model_version`
+- `missing_features_filled`
+- `used_feature_count`
+
 Testing strategy:
-API and repository tests use a temporary SQLite database with fake client IDs only. Tests cover health, metadata, successful score lookup, missing score lookup, missing database handling, score bounds, and binary prediction labels.
+API and repository tests use a temporary SQLite database, fake client IDs, and fake model metadata only. Tests cover health, metadata, successful score lookup, missing score lookup, missing database handling, manual prediction success, missing metadata handling, invalid manual feature values, score bounds, and binary prediction labels.
 
 Privacy and security checks:
-API examples use fake client IDs only. The generated SQLite database is ignored by git. The API does not expose raw features, labels, query text, product names, model binaries, or row-level examples from real data.
+API examples use fake client IDs and fake manual feature examples only. The generated SQLite database and local model metadata are ignored by git. The API does not expose raw labels, query text, product names, model binaries, or row-level examples from real data.
 
 Current result:
-Phase 7A lookup API code, SQLite repository, serving export job, fake-data tests, sanitized serving artifacts, and the WSL limited demo SQLite export are implemented. Syntax checks and API tests pass. The WSL demo export contains 100000 rows. The Windows runtime export failed while Spark was reading the local Parquet score output.
+Phase 7A lookup API code, SQLite repository, serving export job, fake-data tests, sanitized serving artifacts, and the 500000-row local SQLite demo export are implemented. Phase 7B manual feature-input prediction is implemented through lightweight exported Logistic Regression metadata and `POST /predict`. The Windows runtime export failed while Spark was reading the local Parquet score output, so WSL/Linux or a properly configured Spark runtime should be used to refresh the serving DB.
 
 Limitations:
-This is a local MVP lookup layer. It does not include external database deployment, authentication, caching, or load testing.
+This is a local MVP serving layer. It does not include external database deployment, authentication, Redis/distributed cache, production monitoring, or load testing. Manual prediction is useful for review, but it depends on keeping exported metadata synchronized with the trained model version.
 
 Next step:
-Review API behavior against the generated SQLite database before adding manual feature-input prediction or a demo UI.
+Review the lookup and manual prediction API behavior before Phase 7C demo UI work.
 
 ## Updated Serving and Demo Plan
 
@@ -929,29 +1038,50 @@ Objective:
 Clarify the remaining product/demo phases so the API, UI, and model tuning work stay lightweight, reviewable, and separated from heavy Spark processing.
 
 Batch score lookup:
-The API should serve `client_id` lookup requests from the exported batch score store. This keeps request handling fast and avoids reading raw data, loading Spark, or running Spark model inference for each request.
+The API serves `client_id` lookup requests from the exported batch score store. This keeps request handling fast and avoids reading raw data, loading Spark, or running Spark model inference for each request.
 
 Manual feature-input prediction:
-The demo should also support manual feature entry for review and what-if checks. This path should use exported lightweight Logistic Regression metadata: feature order, imputation values, coefficients, intercept, and threshold. The API or UI can compute the logistic sigmoid score directly from those values without Spark in the request path.
+Phase 7B adds manual feature entry for review and what-if checks through `POST /predict`. This path uses exported lightweight Logistic Regression metadata: feature order, imputation values, coefficients, intercept, and threshold. The API computes the logistic sigmoid score directly from those values without Spark in the request path.
 
 Offline training and tuning:
 Training, model comparison, and hyperparameter tuning should remain offline Spark jobs. The frontend should not trigger heavy Spark training by default, and the API should not train models inside request handlers.
 
 Demo interface:
-A simple Streamlit app or lightweight frontend is useful for mentor review because it can show both serving modes: batch score lookup and manual feature-input prediction. Any examples should use fake identifiers and neutral values only.
+A simple Streamlit app or lightweight frontend is still planned for mentor review because it can show both serving modes: batch score lookup and manual feature-input prediction. Any examples should use fake identifiers and neutral values only.
 
 Experiment comparison:
 Model variants should be trained offline and recorded as sanitized aggregate artifacts under `artifacts/experiments/`. The comparison view should summarize ROC-AUC, PR-AUC, TopK precision/recall/lift, confusion matrix, selected threshold, and parameter set for each variant. It should not store or display raw predictions, real client IDs, or row-level examples.
 
+## Privacy and PII Guardrails
+
+The project treats `client_id` as a linkable pseudonymous user identifier. Even when it is not a name or email address, it can still connect behavior across events, features, labels, scores, and serving outputs. Prediction scores are also sensitive because they summarize user-level behavior and likelihood to buy.
+
+Guardrails used throughout the MVP:
+
+- Raw row-level samples are not written to shared artifacts.
+- Raw `client_id` values are not included in reports or committed artifacts.
+- Raw search query text is not written to shared artifacts.
+- Product names are not written to shared artifacts.
+- Row-level prediction examples with real users are not included.
+- Processed data, scoring outputs, SQLite serving DBs, local model metadata, and model binaries remain local and ignored by git.
+- API and repository tests use fake client IDs and fake model metadata.
+- Reports and artifacts use aggregate metrics, schema fields, validation counts, and sanitized technical notes only.
+
+Reason:
+The goal is to make the work mentor-reviewable without exposing user-level behavioral data. This is especially important for scoring projects because both identifiers and prediction outputs can be sensitive. Before any production deployment, the API would need access control, authentication, logging review, and clear policy around who can request or view user-level scores.
+
 ## 9. Risks and Open Questions
 
-- Compressed/archive file handling: if the dataset is provided as an archive in another environment, the inner Parquet files must be made available before Spark table ingestion.
-- Schema interpretation: column names and data types are initially verified, but table relationships and business meaning still need EDA review.
-- Class imbalance: the positive label rate is low and should be handled carefully during baseline modeling.
-- Possible data leakage: label windows and feature windows must be separated carefully.
-- High-cardinality columns: user, item, category, or event attributes may require careful encoding or aggregation.
-- Large file handling: full row counts and schema inference may be expensive on large files.
-- First modeling task: purchase propensity is the current MVP target, pending modeling review.
+- Demo UI is not implemented yet.
+- Load/stress testing is not implemented yet.
+- External database deployment is not implemented.
+- Authentication, access control, rate limiting, and production monitoring are not implemented.
+- Redis or distributed cache is not implemented.
+- Time-based backtesting over multiple cutoffs has not been run.
+- Threshold selection remains a review point because the default threshold produces high recall and many false positives.
+- Duplicate handling policy remains a review point because processed duplicate events may affect feature magnitudes.
+- `page_visit` remains deferred for MVP features because it is the largest table and was not needed for the initial serving path.
+- Windows local Spark had filesystem/native Hadoop issues for some Parquet operations; WSL/Linux or a properly configured Spark runtime is needed for reliable refresh jobs.
 
 ## 10. Current Milestone
 
@@ -964,14 +1094,17 @@ Done in this milestone:
 - FastAPI lookup app added
 - SQLite repository added
 - health, metadata, and score endpoints added
+- manual prediction endpoint added
+- lightweight model metadata export job added
+- pure-Python Logistic Regression scoring logic added
 - fake-data API tests added
-- WSL limited demo SQLite export completed with 100000 rows
+- local model metadata export completed with 36 features
+- 500000-row API/cache serving export completed locally
 - sanitized API contract and serving validation artifacts added
-- README, jobs README, report, and PLAN updated for Phase 7A
+- README, jobs README, report, and PLAN updated for Phase 7A/7B
 
 Not included yet:
 
-- direct manual feature-input prediction
 - demo UI
 - offline model variant comparison
 - load or stress testing
@@ -981,9 +1114,8 @@ Not included yet:
 
 ## 11. Next Steps
 
-1. Review lookup API behavior against the generated SQLite database.
-2. Review Phase 7A files before staging and committing.
-3. Keep `data/serving/` and SQLite files excluded from git.
-4. Plan lightweight model metadata export for manual feature-input prediction.
-5. Decide whether the demo UI should use Streamlit or a lightweight frontend.
-6. Keep offline tuning and experiment comparison in Phase 8, separate from API request handling.
+1. Review lookup and manual prediction API behavior.
+2. Keep `data/serving/`, SQLite files, and local model metadata excluded from git.
+3. Decide whether the demo UI should use Streamlit or a lightweight frontend.
+4. Run API/cache load testing after the demo scope is approved.
+5. Keep offline tuning and experiment comparison in Phase 8, separate from API request handling.

@@ -1,14 +1,18 @@
 {
   "phase": "Phase 7A: Batch Score Lookup API",
   "service": "purchase-propensity-api",
-  "api_mode": "batch_score_lookup",
-  "data_source": "local SQLite lookup database exported from Phase 6 batch scores",
+  "api_mode": "batch_score_lookup_and_manual_prediction",
+  "data_source": "local SQLite lookup database exported from Phase 6 batch scores plus lightweight Logistic Regression metadata",
   "sqlite_db_path": "data/serving/purchase_propensity_scores.sqlite",
-  "demo_export_row_count": 100000,
+  "demo_export_row_count": 500000,
+  "target_demo_export_row_count": 500000,
+  "target_demo_export_command": "python jobs/07_export_serving_scores.py --limit 500000",
   "sqlite_db_excluded_from_git": true,
+  "model_metadata_path": "data/serving/model_metadata/baseline_lr_v1.json",
+  "model_metadata_excluded_from_git": true,
+  "manual_feature_input_prediction_implemented": true,
   "request_path_runs_spark": false,
   "request_path_runs_spark_ml_inference": false,
-  "manual_feature_input_prediction_implemented": false,
   "streamlit_demo_implemented": false,
   "experiment_tracking_or_tuning_implemented": false,
   "endpoints": [
@@ -46,6 +50,25 @@
         "prediction_label": "integer",
         "model_version": "string",
         "scored_at": "string"
+      },
+      "error_response_schema": {
+        "detail": "string"
+      }
+    },
+    {
+      "path": "/predict",
+      "method": "POST",
+      "request_body_schema": {
+        "features": "object<string, number|string|null>"
+      },
+      "status_codes": [200, 422, 503],
+      "success_response_schema": {
+        "prediction_score": "number",
+        "prediction_label": "integer",
+        "decision": "string",
+        "model_version": "string",
+        "missing_features_filled": "array<string>",
+        "used_feature_count": "integer"
       },
       "error_response_schema": {
         "detail": "string"

@@ -37,7 +37,7 @@
 | Label construction | Completed pending review | Spark label and training outputs generated with sanitized validation artifacts |
 | Modeling | Completed pending review | Baseline Spark ML model and sanitized aggregate metrics generated |
 | Batch scoring | Completed pending review | Spark score table and sanitized aggregate scoring artifacts generated |
-| API serving and demo interface | In progress | Phase 7A lookup API scaffold, fake-data tests, and WSL limited demo SQLite export are implemented |
+| API serving and demo interface | In progress | Phase 7A lookup API, 500000-row local serving DB export, and Phase 7B manual feature-input prediction are implemented; Phase 7C demo UI is planned |
 | Experiment tracking and tuning | Not started | Requires offline Spark model variant plan and sanitized experiment artifacts |
 | Load/stress testing and final packaging | Not started | Requires stable API/demo surface first |
 | Commit/push | Done | Stable foundation commit pushed to `origin/master` |
@@ -575,9 +575,9 @@ Verification/Test Steps:
   - coefficients
   - intercept
   - threshold
-- Planned job: `jobs/07_export_model_metadata.py`.
+- Implement model metadata export job: `jobs/07_export_model_metadata.py`.
 - Implement manual feature-input prediction from the exported model metadata.
-- Implement demo UI for mentor review with:
+- Plan demo UI for mentor review with:
   - client score lookup
   - manual feature-input prediction
   - safe fake examples
@@ -591,7 +591,8 @@ Definition of Done:
 
 - Batch lookup API returns prediction response from SQLite.
 - Direct feature-input prediction returns likelihood to buy without Spark.
-- Demo UI supports lookup and manual feature-input workflows.
+- Manual feature-input prediction returns likelihood to buy without Spark.
+- Demo UI plan supports lookup and manual feature-input workflows.
 - Error cases are handled.
 - SQLite lookup repository exists.
 - API does not run Spark or Spark ML inference per request.
@@ -613,7 +614,7 @@ Review Questions:
 - Should cache be added?
 
 Status:
-In progress. Subphase 7A has the serving score export job, lookup API, SQLite repository, fake-data tests, sanitized serving artifacts, and WSL limited demo SQLite export. Syntax checks and API tests pass. The WSL demo export contains 100000 rows. The Windows runtime export failed while Spark was reading the local score Parquet output. Subphases 7B and 7C are planned but not implemented.
+In progress. Subphase 7A has the serving score export job, lookup API, SQLite repository, fake-data tests, sanitized serving artifacts, and 500000-row local serving DB export. Subphase 7B has the model metadata export job, pure-Python manual scoring logic, `POST /predict`, fake-metadata tests, and sanitized model metadata summary artifact. Syntax checks and API tests pass. The Windows runtime export failed while Spark was reading the local score Parquet output, so WSL/Linux or a properly configured Spark runtime should be used to refresh the serving DB. Subphase 7C is planned but not implemented.
 
 ### Phase 8: Experiment Tracking & Hyperparameter Tuning
 
@@ -717,8 +718,7 @@ Not started.
 
 ## 4. Immediate Next Actions
 
-1. Review lookup API behavior against the generated SQLite database.
-2. Review Phase 7A before staging and committing.
+1. Review lookup and manual prediction API behavior.
 3. Decide whether the demo UI should use Streamlit or a lightweight frontend.
 4. Keep Phase 8 offline tuning separate from API/demo implementation.
 

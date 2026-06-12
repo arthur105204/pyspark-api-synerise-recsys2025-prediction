@@ -1,0 +1,26 @@
+{
+  "generated_at_date": "2026-06-12",
+  "phase": "Phase 7B: Manual Feature-Input Prediction",
+  "status": "success",
+  "model_version": "baseline_lr_v1",
+  "model_type": "LogisticRegression",
+  "local_model_metadata_path": "data/serving/model_metadata/baseline_lr_v1.json",
+  "local_model_metadata_excluded_from_git": true,
+  "feature_count": 36,
+  "coefficient_count": 36,
+  "intercept_exported": true,
+  "threshold": 0.5,
+  "imputation_values_exported": true,
+  "api_runs_spark_per_request": false,
+  "api_runs_spark_ml_inference_per_request": false,
+  "privacy_validation": {
+    "artifact_level": "aggregate_model_metadata_summary",
+    "real_client_ids_persisted": false,
+    "row_level_real_scores_persisted": false,
+    "raw_feature_rows_persisted": false,
+    "raw_query_text_persisted": false,
+    "product_names_persisted": false,
+    "local_paths_persisted": false,
+    "passed": true
+  }
+}

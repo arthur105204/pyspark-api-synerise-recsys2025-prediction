@@ -55,6 +55,7 @@ artifacts/*
 !artifacts/serving/api_contract.json
 !artifacts/serving/serving_validation.csv
 !artifacts/serving/serving_notes.md
+!artifacts/serving/model_metadata_summary.json
 outputs/
 models/
 *.model

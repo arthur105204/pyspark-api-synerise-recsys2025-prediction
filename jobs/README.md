@@ -600,35 +600,49 @@ Full export:
 python jobs/07_export_serving_scores.py
 ```
 
-Local demo export:
+Local API/cache demo export:
 
 ```powershell
-python jobs/07_export_serving_scores.py --limit 100000
+python jobs/07_export_serving_scores.py --limit 500000
 ```
 
 Optional arguments:
 
 ```powershell
-python jobs/07_export_serving_scores.py --input-path data/processed/scoring/purchase_propensity_scores --output-db data/serving/purchase_propensity_scores.sqlite --limit 100000 --batch-size 10000
+python jobs/07_export_serving_scores.py --input-path data/processed/scoring/purchase_propensity_scores --output-db data/serving/purchase_propensity_scores.sqlite --limit 500000 --batch-size 10000
 ```
 
 WSL/Linux uses the same command from the project root:
 
 ```bash
-python jobs/07_export_serving_scores.py --limit 100000
+python jobs/07_export_serving_scores.py --limit 500000
 ```
 
 The generated SQLite database is local serving data and should not be committed. The job does not create row-level artifacts under `artifacts/`.
 
 ### Serving Export Runtime Note
 
-The serving export job uses Spark to read the Phase 6 scoring Parquet output and Python SQLite writes for the local lookup store. The limited demo export completed in WSL with 100000 rows. On Windows local Spark, reading local Parquet directories may require a proper Hadoop/winutils setup.
+The serving export job uses Spark to read the Phase 6 scoring Parquet output and Python SQLite writes for the local lookup store. The local API/cache demo DB contains 500000 rows. On Windows local Spark, reading local Parquet directories may require a proper Hadoop/winutils setup; run refresh exports in WSL/Linux or configure Hadoop properly.
 
 ### `07_export_model_metadata.py`
 
-Planned Phase 7B job for exporting lightweight Logistic Regression metadata for direct manual feature-input prediction.
+Phase 7B job for exporting lightweight Logistic Regression metadata for direct manual feature-input prediction.
 
-Planned output:
+Input:
+
+- `data/models/purchase_propensity_baseline/`
+- `artifacts/modeling/feature_processing_summary.csv`
+- `artifacts/modeling/baseline_model_summary.json`
+
+Local output:
+
+- `data/serving/model_metadata/baseline_lr_v1.json`
+
+Sanitized artifact:
+
+- `artifacts/serving/model_metadata_summary.json`
+
+Local metadata content:
 
 - feature order
 - imputation values
@@ -637,6 +651,12 @@ Planned output:
 - chosen threshold
 
 This export should be sanitized and small enough for API/UI use. It should not include raw rows, real client IDs, raw predictions, model training data, or local runtime paths. The API/UI can use this metadata to compute a logistic sigmoid score without loading Spark or running Spark ML inside a request path.
+
+Run:
+
+```powershell
+python jobs/07_export_model_metadata.py
+```
 
 ### `08_train_model_variants.py`
 
