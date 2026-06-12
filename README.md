@@ -218,14 +218,51 @@ artifacts/modeling/baseline_model_notes.md
 
 `data/models/` is ignored by git and should not be committed. This phase trains and evaluates a baseline model only. It does not implement API serving or production batch scoring.
 
+## Run Batch Scoring
+
+```powershell
+python jobs/06_batch_score.py
+```
+
+With explicit config:
+
+```powershell
+python jobs/06_batch_score.py --config configs/pipeline_config.yaml
+```
+
+The batch scoring job reads:
+
+```text
+data/processed/features/user_behavior_features/
+data/models/purchase_propensity_baseline/
+```
+
+It writes the local score table under:
+
+```text
+data/processed/scoring/purchase_propensity_scores/
+```
+
+Scoring artifacts are written to:
+
+```text
+artifacts/scoring/scoring_summary.json
+artifacts/scoring/score_distribution.csv
+artifacts/scoring/scoring_validation.csv
+artifacts/scoring/scoring_notes.md
+```
+
+`data/processed/` and `data/models/` are ignored by git and should not be committed. This phase creates batch scores only. It does not implement API serving or an online inference endpoint.
+
 ## Current Status
 
 - The project direction is documented as customer behavior scoring from event logs.
-- Raw inspection, EDA, business target selection, preprocessing, feature engineering, label construction, and baseline modeling jobs are implemented.
+- Raw inspection, EDA, business target selection, preprocessing, feature engineering, label construction, baseline modeling, and batch scoring jobs are implemented.
 - The current MVP target is purchase propensity with a 30-day target window.
 - Phase 4 label construction has generated aggregate validation artifacts and local processed Spark Parquet outputs.
 - Phase 5 baseline modeling has generated a local Spark ML model and sanitized aggregate modeling artifacts.
-- Batch scoring and API code are intentionally not included in this milestone.
+- Phase 6 batch scoring has generated a local score table and sanitized aggregate scoring artifacts.
+- API code is intentionally not included in this milestone.
 - Raw data and large generated outputs are ignored by git.
 
 ## Agent Instructions
@@ -234,4 +271,4 @@ This repo includes `AGENTS.md` and a small set of Codex skills for data privacy,
 
 ## Next Step
 
-Review the Phase 5 modeling metrics, then decide whether Phase 6 batch scoring should begin.
+Review the Phase 6 scoring artifacts, then decide whether Phase 7 API serving should begin.

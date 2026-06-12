@@ -1,0 +1,45 @@
+{
+  "generated_at_date": "2026-06-12",
+  "phase": "Phase 6: Batch Scoring",
+  "status": "success",
+  "task": "purchase_propensity",
+  "model_version": "baseline_lr_v1",
+  "model_type": "Spark ML PipelineModel",
+  "feature_input_path": "data/processed/features/user_behavior_features",
+  "model_input_path": "data/models/purchase_propensity_baseline",
+  "score_output_path": "data/processed/scoring/purchase_propensity_scores",
+  "input_row_count": 2810342,
+  "eligible_row_count": 2149796,
+  "score_row_count": 2149796,
+  "min_prediction_score": 8.43769498715119e-15,
+  "max_prediction_score": 1.0,
+  "avg_prediction_score": 0.3506787593838202,
+  "score_threshold": 0.5,
+  "predicted_positive_count": 516759,
+  "predicted_positive_rate": 0.2403758310090818,
+  "validation": {
+    "duplicate_client_id_count": 0,
+    "null_prediction_score_count": 0,
+    "score_out_of_range_count": 0,
+    "invalid_prediction_label_count": 0,
+    "model_loaded": true,
+    "score_table_written": true
+  },
+  "leakage_validation": {
+    "input_dataset_source": "Phase 3 feature table",
+    "phase_3_features_before_cutoff": true,
+    "phase_5_model_trained_on_leakage_safe_dataset": true,
+    "labels_or_target_window_events_used": false,
+    "forbidden_output_columns": [],
+    "passed": true
+  },
+  "api_created": false,
+  "production_endpoint_created": false,
+  "privacy": {
+    "artifact_level": "aggregate_only",
+    "row_level_scores_persisted": false,
+    "raw_client_ids_persisted": false,
+    "raw_query_text_persisted": false,
+    "product_names_persisted": false
+  }
+}

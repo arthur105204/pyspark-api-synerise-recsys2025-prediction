@@ -36,6 +36,7 @@
 | Feature engineering | Completed pending review | User-level feature table and sanitized feature artifacts generated |
 | Label construction | Completed pending review | Spark label and training outputs generated with sanitized validation artifacts |
 | Modeling | Completed pending review | Baseline Spark ML model and sanitized aggregate metrics generated |
+| Batch scoring | Completed pending review | Spark score table and sanitized aggregate scoring artifacts generated |
 | API | Not started | Requires prediction table first |
 | Commit/push | Done | Stable foundation commit pushed to `origin/master` |
 
@@ -486,6 +487,21 @@ Guardrails:
 - Predictions should be generated offline/batch.
 - Prediction schema must be stable.
 - Model version and scoring timestamp should be included.
+- Use Spark ML / PySpark for scoring.
+- Do not implement API serving.
+- Do not create an online inference endpoint.
+- Do not commit model binaries or row-level score data.
+
+Planned outputs:
+
+- `data/processed/scoring/purchase_propensity_scores/`
+
+Planned artifacts:
+
+- `artifacts/scoring/scoring_summary.json`
+- `artifacts/scoring/score_distribution.csv`
+- `artifacts/scoring/scoring_validation.csv`
+- `artifacts/scoring/scoring_notes.md`
 
 Verification/Test Steps:
 
@@ -493,26 +509,35 @@ Verification/Test Steps:
   - `client_id`
   - `prediction_score`
   - `prediction_label`
-  - `risk_level`
   - `model_version`
   - `scored_at`
+- Load trained Spark ML model from `data/models/purchase_propensity_baseline/`.
+- Score eligible clients from `data/processed/features/user_behavior_features/`.
 - Validate no duplicate client ids.
 - Validate score ranges.
+- Validate prediction labels are only `0` or `1`.
+- Validate no label or target-window metadata is included in score output.
+- Generate aggregate scoring artifacts only.
 
 Definition of Done:
 
 - Batch prediction table exists.
 - Schema is documented.
 - Report includes scoring input, process, and output.
+- Output row count equals eligible scoring cohort count.
+- Scoring validation artifacts are generated.
+- Leakage validation passes.
+- No API serving, online endpoint, model binary commit, or row-level score artifact is created.
 
 Review Questions:
 
 - Is the prediction schema enough for API?
 - Should predictions be stored in local file, SQLite, Postgres, or Redis later?
 - Are model versions tracked?
+- Are score buckets and threshold useful for the first API lookup?
 
 Status:
-Not started.
+Completed pending review. `jobs/06_batch_score.py` generated `data/processed/scoring/purchase_propensity_scores/` and sanitized artifacts under `artifacts/scoring/`. The job scored 2,149,796 eligible clients, produced 516,759 predicted positives at threshold 0.5, and passed validation and leakage checks.
 
 ### Phase 7: API Serving
 
@@ -590,10 +615,9 @@ Not started.
 
 ## 4. Immediate Next Actions
 
-1. Review generated modeling artifacts under `artifacts/modeling/`.
-2. Confirm ROC-AUC, PR-AUC, threshold metrics, and TopK metrics.
-3. Confirm feature processing, imputation, and class weighting choices.
-4. Decide whether Phase 6 should proceed to batch scoring.
+1. Review generated scoring artifacts under `artifacts/scoring/`.
+2. Confirm score output row count, score range, duplicate checks, and schema.
+3. Decide whether Phase 7 should proceed to API serving.
 
 ## 5. Agent Instruction Setup
 

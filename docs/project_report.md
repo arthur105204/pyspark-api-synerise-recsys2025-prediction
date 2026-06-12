@@ -795,6 +795,90 @@ A single random split is acceptable for the MVP baseline. A future improvement s
 Next step:
 Review the baseline metrics, then prepare Phase 6 batch scoring if the model quality and targeting lift are acceptable.
 
+## Batch Scoring Milestone Summary
+
+Objective:
+Generate serving-ready batch prediction scores for eligible purchase propensity clients.
+
+Input feature table:
+`data/processed/features/user_behavior_features/`
+
+Input model path:
+`data/models/purchase_propensity_baseline/`
+
+Scoring cohort:
+Clients with `is_eligible_purchase_propensity = 1` from the Phase 3 feature table.
+
+Model version:
+`baseline_lr_v1`
+
+Output score table:
+`data/processed/scoring/purchase_propensity_scores/`
+
+Score columns:
+
+- `client_id`
+- `prediction_score`
+- `prediction_label`
+- `model_version`
+- `scored_at`
+
+Process:
+The batch scoring job loads the Phase 5 Spark ML model, applies it to the eligible Phase 3 feature rows, extracts the class-1 probability as `prediction_score`, applies the configured threshold for `prediction_label`, and writes a local Spark Parquet score table.
+
+Artifacts:
+
+- `artifacts/scoring/scoring_summary.json`
+- `artifacts/scoring/score_distribution.csv`
+- `artifacts/scoring/scoring_validation.csv`
+- `artifacts/scoring/scoring_notes.md`
+
+Validation checks:
+The job validates score row count, eligible row count, duplicate `client_id`, score range, null scores, prediction label values, model version, score timestamp, model load status, score write status, and absence of labels or target-window metadata in the scoring output.
+
+Result:
+
+| Metric | Value |
+| --- | ---: |
+| Input feature rows | 2,810,342 |
+| Eligible scoring rows | 2,149,796 |
+| Score output rows | 2,149,796 |
+| Predicted positive count | 516,759 |
+| Predicted positive rate | 0.240376 |
+| Minimum prediction score | 0.000000 |
+| Maximum prediction score | 1.000000 |
+| Average prediction score | 0.350679 |
+
+Score distribution:
+
+| Score bucket | Row count | Row rate |
+| --- | ---: | ---: |
+| 0.0-0.1 | 36,854 | 0.017143 |
+| 0.1-0.2 | 669,430 | 0.311392 |
+| 0.2-0.3 | 507,557 | 0.236095 |
+| 0.3-0.4 | 170,841 | 0.079468 |
+| 0.4-0.5 | 248,355 | 0.115525 |
+| 0.5-0.6 | 216,975 | 0.100928 |
+| 0.6-0.7 | 105,137 | 0.048906 |
+| 0.7-0.8 | 77,653 | 0.036121 |
+| 0.8-0.9 | 54,793 | 0.025488 |
+| 0.9-1.0 | 62,201 | 0.028933 |
+
+Validation result:
+All scoring validation checks passed. The score output row count equals the eligible cohort count, no duplicate `client_id` values were found, scores are non-null and within `[0, 1]`, prediction labels are binary, model version and score timestamp are populated, and labels or target-window metadata are excluded from the output.
+
+Leakage checks:
+Scoring input comes from the Phase 3 feature table, features were built before cutoff, the Phase 5 model was trained on the leakage-safe Phase 4 training dataset, and Phase 6 does not use labels or target-window events.
+
+Privacy checks:
+Scoring artifacts are designed as aggregate summaries only. Row-level score data is written under ignored local processed data and should not be committed.
+
+Current result:
+The Phase 6 batch scoring job completed successfully. It generated one score row per eligible client and produced aggregate scoring artifacts suitable for review.
+
+Next step:
+Review the score output schema and aggregate score distribution before API serving or lookup-layer work begins.
+
 ## 9. Risks and Open Questions
 
 - Compressed/archive file handling: if the dataset is provided as an archive in another environment, the inner Parquet files must be made available before Spark table ingestion.
@@ -808,27 +892,26 @@ Review the baseline metrics, then prepare Phase 6 batch scoring if the model qua
 ## 10. Current Milestone
 
 Current milestone:
-Phase 5: Baseline Modeling.
+Phase 6: Batch Scoring.
 
 Done in this milestone:
 
-- baseline modeling job added
-- Spark ML Logistic Regression pipeline defined
-- median imputation and feature vector assembly defined
-- class weighting for imbalance defined
-- trained model generated locally
-- aggregate metrics and modeling artifacts generated
+- batch scoring job added
+- trained Spark ML model loading defined
+- eligible cohort scoring defined
+- score output schema defined
+- score table generated locally
+- aggregate scoring artifacts generated
 - README update
 - jobs README update
 - PLAN phase status update
 
 Not included yet:
 
-- prediction outputs
 - API
 
 ## 11. Next Steps
 
-1. Review ROC-AUC, PR-AUC, threshold metrics, and TopK targeting metrics.
-2. Confirm feature processing and class weighting choices.
-3. Move to batch scoring or API serving preparation only after baseline modeling review.
+1. Review score counts, score distribution, and validation artifacts.
+2. Confirm the score output schema is enough for API lookup.
+3. Move to API serving or lookup-layer work only after batch scoring review.

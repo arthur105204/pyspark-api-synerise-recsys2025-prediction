@@ -471,3 +471,93 @@ This job does not create API serving code, production batch scoring outputs, row
 ### Baseline Modeling Runtime Note
 
 The modeling job uses Spark to read the Phase 4 training Parquet dataset and Spark ML to write the model. On Windows local Spark, reading or writing local Parquet/model directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.
+
+## `06_batch_score.py`
+
+This job runs Phase 6 batch scoring for the purchase propensity 30-day task.
+
+Inputs:
+
+- `data/processed/features/user_behavior_features/`
+- `data/models/purchase_propensity_baseline/`
+- `configs/pipeline_config.yaml`
+
+Scoring approach:
+
+- Loads the Phase 5 Spark ML `PipelineModel`.
+- Reads the Phase 3 feature table.
+- Filters to clients where `is_eligible_purchase_propensity = 1`.
+- Extracts class-1 probability as `prediction_score`.
+- Creates `prediction_label` with the configured score threshold.
+
+### How to Run
+
+```powershell
+python jobs/06_batch_score.py
+```
+
+With explicit config:
+
+```powershell
+python jobs/06_batch_score.py --config configs/pipeline_config.yaml
+```
+
+Optional arguments:
+
+```powershell
+python jobs/06_batch_score.py --feature-input data/processed/features/user_behavior_features --model-input data/models/purchase_propensity_baseline --score-output data/processed/scoring/purchase_propensity_scores --artifacts-base artifacts --model-version baseline_lr_v1 --score-threshold 0.5
+```
+
+WSL/Linux uses the same command from the project root:
+
+```bash
+python jobs/06_batch_score.py
+```
+
+### Score Output
+
+The job writes the Spark Parquet score table to:
+
+```text
+data/processed/scoring/purchase_propensity_scores/
+```
+
+Score columns:
+
+- `client_id`
+- `prediction_score`
+- `prediction_label`
+- `model_version`
+- `scored_at`
+
+Sanitized aggregate artifacts:
+
+```text
+artifacts/scoring/scoring_summary.json
+artifacts/scoring/score_distribution.csv
+artifacts/scoring/scoring_validation.csv
+artifacts/scoring/scoring_notes.md
+```
+
+Validation checks include row counts, duplicate `client_id`, score range, prediction label values, model version, score timestamp, model load status, score write status, and exclusion of labels or target-window metadata from the scoring output.
+
+Latest validated output:
+
+- input feature rows: 2,810,342
+- eligible scoring rows: 2,149,796
+- score rows: 2,149,796
+- model version: `baseline_lr_v1`
+- score threshold: 0.5
+- predicted positives: 516,759
+- predicted positive rate: 0.240376
+- minimum prediction score: 0.000000
+- maximum prediction score: 1.000000
+- average prediction score: 0.350679
+- validation checks: all pass
+- leakage validation: pass
+
+This job does not implement API serving, create an online endpoint, retrain a model, write row-level score artifacts for commit, or commit model binaries. Score data under `data/processed/` and model data under `data/models/` are ignored by default and should not be committed.
+
+### Batch Scoring Runtime Note
+
+The scoring job uses Spark to read feature Parquet inputs, load the Spark ML model, and write score Parquet outputs. On Windows local Spark, reading or writing local Parquet/model directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.

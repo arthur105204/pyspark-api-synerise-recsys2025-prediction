@@ -1,0 +1,12 @@
+check_name,status,observed_value,expected_value,notes
+output_row_count_equals_eligible_input_row_count,pass,2149796,2149796,Score output should include one row per eligible client.
+no_null_prediction_score,pass,0,0,Scores are required.
+prediction_score_in_0_1,pass,0,0,"Scores must be probabilities in [0, 1]."
+prediction_label_values_only_0_or_1,pass,0,0,Prediction labels are thresholded binary values.
+no_duplicate_client_id,pass,0,0,Score output should be unique by client_id.
+model_version_non_null,pass,0,0,Model version is required.
+scored_at_non_null,pass,0,0,Score timestamp is required.
+no_label_column_in_score_output,pass,False,False,Labels are not part of serving output.
+no_target_window_metadata_in_score_output,pass,,,Target-window metadata is not part of serving output.
+model_loaded_successfully,pass,True,True,Spark ML model must load before scoring.
+score_table_written_successfully,pass,True,True,Spark writer must create score output.

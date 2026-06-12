@@ -45,6 +45,11 @@ artifacts/*
 !artifacts/modeling/topk_metrics.csv
 !artifacts/modeling/feature_processing_summary.csv
 !artifacts/modeling/baseline_model_notes.md
+!artifacts/scoring/
+!artifacts/scoring/scoring_summary.json
+!artifacts/scoring/score_distribution.csv
+!artifacts/scoring/scoring_validation.csv
+!artifacts/scoring/scoring_notes.md
 outputs/
 models/
 *.model
