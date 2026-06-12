@@ -381,3 +381,93 @@ This job does not train a model, evaluate a model, create predictions, create ba
 ### Label Construction Runtime Note
 
 The label job uses Spark to read processed Parquet inputs and Spark `DataFrameWriter` to write the label and training tables. On Windows local Spark, reading or writing local Parquet directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.
+
+## `05_train_baseline_model.py`
+
+This job runs Phase 5 baseline modeling for the purchase propensity 30-day task.
+
+Inputs:
+
+- `data/processed/training/purchase_propensity_30d/`
+- `configs/pipeline_config.yaml`
+
+Modeling approach:
+
+- Spark ML `LogisticRegression`
+- deterministic 80/20 train/test split
+- seed: `42`
+- median imputation for numeric model inputs
+- class weights enabled by default for class imbalance
+
+Feature preparation:
+
+- Uses numeric feature columns from the Phase 4 training dataset.
+- Excludes `client_id`, `label`, `target_window_start`, `target_window_end`, `target_event_count`, prediction columns, and label-like metadata.
+- Uses Spark ML `Imputer`, `VectorAssembler`, and `LogisticRegression`.
+
+### How to Run
+
+```powershell
+python jobs/05_train_baseline_model.py
+```
+
+With explicit config:
+
+```powershell
+python jobs/05_train_baseline_model.py --config configs/pipeline_config.yaml
+```
+
+Optional arguments:
+
+```powershell
+python jobs/05_train_baseline_model.py --input-path data/processed/training/purchase_propensity_30d --model-output data/models/purchase_propensity_baseline --artifacts-base artifacts --sample-fraction 1.0 --seed 42
+```
+
+WSL/Linux uses the same command from the project root:
+
+```bash
+python jobs/05_train_baseline_model.py
+```
+
+### Model Outputs
+
+The job writes the Spark ML model to:
+
+```text
+data/models/purchase_propensity_baseline/
+```
+
+Sanitized aggregate artifacts:
+
+```text
+artifacts/modeling/baseline_model_summary.json
+artifacts/modeling/baseline_metrics.csv
+artifacts/modeling/topk_metrics.csv
+artifacts/modeling/feature_processing_summary.csv
+artifacts/modeling/baseline_model_notes.md
+```
+
+Metrics include train/test row counts, positive rates, ROC-AUC, PR-AUC, confusion matrix at threshold `0.5`, and TopK precision/recall/lift at `1%`, `5%`, and `10%`.
+
+TopK metrics are computed with Spark ordering plus `limit()` for each K slice, then aggregated. The job does not use a global Spark window ranking step for TopK and does not write row-level predictions.
+
+Latest validated output:
+
+- train rows: 1,720,719
+- test rows: 429,077
+- train positive rate: 0.043488
+- test positive rate: 0.043778
+- feature count used: 36
+- class weighting enabled: true
+- ROC-AUC: 0.840501
+- PR-AUC: 0.254436
+- threshold `0.5` confusion matrix: TP 13,637; FP 89,245; TN 321,048; FN 5,147
+- Top 1%: precision 0.480541; recall 0.109774; lift 10.976839
+- Top 5%: precision 0.296215; recall 0.338320; lift 6.766350
+- Top 10%: precision 0.215205; recall 0.491589; lift 4.915851
+
+This job does not create API serving code, production batch scoring outputs, row-level prediction artifacts, or client-level exports. Model data under `data/models/` is ignored by default and should not be committed.
+
+### Baseline Modeling Runtime Note
+
+The modeling job uses Spark to read the Phase 4 training Parquet dataset and Spark ML to write the model. On Windows local Spark, reading or writing local Parquet/model directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.

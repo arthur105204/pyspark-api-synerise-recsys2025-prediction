@@ -182,13 +182,50 @@ artifacts/labels/label_notes.md
 
 This phase creates supervised labels and a training-ready dataset only. It does not train a model, create predictions, or implement API serving.
 
+## Run Baseline Modeling
+
+```powershell
+python jobs/05_train_baseline_model.py
+```
+
+With explicit config:
+
+```powershell
+python jobs/05_train_baseline_model.py --config configs/pipeline_config.yaml
+```
+
+The baseline modeling job reads:
+
+```text
+data/processed/training/purchase_propensity_30d/
+```
+
+It writes the Spark ML model locally under:
+
+```text
+data/models/purchase_propensity_baseline/
+```
+
+Modeling artifacts are written to:
+
+```text
+artifacts/modeling/baseline_model_summary.json
+artifacts/modeling/baseline_metrics.csv
+artifacts/modeling/topk_metrics.csv
+artifacts/modeling/feature_processing_summary.csv
+artifacts/modeling/baseline_model_notes.md
+```
+
+`data/models/` is ignored by git and should not be committed. This phase trains and evaluates a baseline model only. It does not implement API serving or production batch scoring.
+
 ## Current Status
 
 - The project direction is documented as customer behavior scoring from event logs.
-- Raw inspection, EDA, business target selection, preprocessing, feature engineering, and label construction jobs are implemented.
+- Raw inspection, EDA, business target selection, preprocessing, feature engineering, label construction, and baseline modeling jobs are implemented.
 - The current MVP target is purchase propensity with a 30-day target window.
 - Phase 4 label construction has generated aggregate validation artifacts and local processed Spark Parquet outputs.
-- Modeling, batch scoring, and API code are intentionally not included in this milestone.
+- Phase 5 baseline modeling has generated a local Spark ML model and sanitized aggregate modeling artifacts.
+- Batch scoring and API code are intentionally not included in this milestone.
 - Raw data and large generated outputs are ignored by git.
 
 ## Agent Instructions
@@ -197,4 +234,4 @@ This repo includes `AGENTS.md` and a small set of Codex skills for data privacy,
 
 ## Next Step
 
-Review the Phase 4 label artifacts and decide whether Phase 5 baseline modeling should begin.
+Review the Phase 5 modeling metrics, then decide whether Phase 6 batch scoring should begin.

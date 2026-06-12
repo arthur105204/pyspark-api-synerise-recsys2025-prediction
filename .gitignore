@@ -4,6 +4,7 @@ data/interim/
 data/processed/
 data/serving/
 data/external/
+data/models/
 
 # large artifacts and outputs
 artifacts/*
@@ -38,6 +39,12 @@ artifacts/*
 !artifacts/labels/label_validation.csv
 !artifacts/labels/training_dataset_validation.csv
 !artifacts/labels/label_notes.md
+!artifacts/modeling/
+!artifacts/modeling/baseline_model_summary.json
+!artifacts/modeling/baseline_metrics.csv
+!artifacts/modeling/topk_metrics.csv
+!artifacts/modeling/feature_processing_summary.csv
+!artifacts/modeling/baseline_model_notes.md
 outputs/
 models/
 *.model

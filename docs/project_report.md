@@ -713,6 +713,88 @@ The 30-day purchase propensity label is now available for the eligible cohort. T
 Next step:
 Baseline modeling after mentor review of the label definition, class balance, leakage checks, and null strategy.
 
+## Baseline Modeling Milestone Summary
+
+Objective:
+Train and evaluate a simple Spark ML baseline model for the 30-day purchase propensity task.
+
+Input training dataset:
+`data/processed/training/purchase_propensity_30d/`
+
+Model type:
+Spark ML Logistic Regression.
+
+Train/test split:
+Deterministic 80/20 random split with seed `42`.
+
+Split result:
+
+| Split | Rows | Positive rate |
+| --- | ---: | ---: |
+| Train | 1,720,719 | 0.043488 |
+| Test | 429,077 | 0.043778 |
+
+Feature preparation:
+Numeric feature columns are assembled with Spark ML. Non-feature columns such as `client_id`, `label`, target-window metadata, and prediction/model columns are excluded.
+
+Imputation strategy:
+Median imputation for 36 numeric model input columns.
+
+Class imbalance handling:
+Class weights are enabled because the Phase 4 positive rate is 0.043546.
+
+Evaluation metrics:
+
+| Metric | Value |
+| --- | ---: |
+| ROC-AUC | 0.840501 |
+| PR-AUC | 0.254436 |
+
+Confusion matrix at threshold `0.5`:
+
+| Metric | Count |
+| --- | ---: |
+| True positives | 13,637 |
+| False positives | 89,245 |
+| True negatives | 321,048 |
+| False negatives | 5,147 |
+
+Threshold metrics:
+
+| Metric | Value |
+| --- | ---: |
+| Precision | 0.132550 |
+| Recall | 0.725990 |
+| F1 | 0.224171 |
+
+TopK targeting metrics:
+
+| K | Users | Positives captured | Precision@K | Recall@K | Lift@K |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1% | 4,291 | 2,062 | 0.480541 | 0.109774 | 10.976839 |
+| 5% | 21,454 | 6,355 | 0.296215 | 0.338320 | 6.766350 |
+| 10% | 42,908 | 9,234 | 0.215205 | 0.491589 | 4.915851 |
+
+Model output path:
+`data/models/purchase_propensity_baseline/`
+
+Artifacts:
+
+- `artifacts/modeling/baseline_model_summary.json`
+- `artifacts/modeling/baseline_metrics.csv`
+- `artifacts/modeling/topk_metrics.csv`
+- `artifacts/modeling/feature_processing_summary.csv`
+- `artifacts/modeling/baseline_model_notes.md`
+
+Current result:
+The Phase 5 baseline modeling job completed successfully. The ROC-AUC indicates the baseline ranks positives well above random. PR-AUC is substantially higher than the test positive rate, which is more informative than accuracy for this imbalanced task. TopK lift is strongest at the top 1%, which supports a ranking-based targeting use case.
+
+Limitations:
+A single random split is acceptable for the MVP baseline. A future improvement should evaluate time-based backtesting over multiple cutoffs. The threshold `0.5` favors recall but creates many false positives, so operating threshold selection should be reviewed before production scoring. TopK metrics are computed with Spark ordering plus `limit()` for each K slice and are kept as aggregate artifacts only.
+
+Next step:
+Review the baseline metrics, then prepare Phase 6 batch scoring if the model quality and targeting lift are acceptable.
+
 ## 9. Risks and Open Questions
 
 - Compressed/archive file handling: if the dataset is provided as an archive in another environment, the inner Parquet files must be made available before Spark table ingestion.
@@ -726,30 +808,27 @@ Baseline modeling after mentor review of the label definition, class balance, le
 ## 10. Current Milestone
 
 Current milestone:
-Phase 4: Label Construction.
+Phase 5: Baseline Modeling.
 
 Done in this milestone:
 
-- label construction job added
-- label definition encoded for the purchase propensity 30-day task
-- label table generated
-- training-ready dataset generated
-- aggregate label validation artifacts generated
-- leakage and duplicate validation completed
+- baseline modeling job added
+- Spark ML Logistic Regression pipeline defined
+- median imputation and feature vector assembly defined
+- class weighting for imbalance defined
+- trained model generated locally
+- aggregate metrics and modeling artifacts generated
 - README update
 - jobs README update
 - PLAN phase status update
 
 Not included yet:
 
-- modeling
-- evaluation metrics
 - prediction outputs
 - API
 
 ## 11. Next Steps
 
-1. Review the Phase 4 label definition and validation artifacts.
-2. Confirm the class balance and target-window boundary rule.
-3. Confirm the null handling strategy for baseline modeling.
-4. Move to Phase 5 baseline modeling only after label construction review.
+1. Review ROC-AUC, PR-AUC, threshold metrics, and TopK targeting metrics.
+2. Confirm feature processing and class weighting choices.
+3. Move to batch scoring or API serving preparation only after baseline modeling review.

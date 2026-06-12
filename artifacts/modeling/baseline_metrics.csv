@@ -1,0 +1,15 @@
+metric_name,value,notes
+train_rows,1720719,Rows in deterministic train split.
+test_rows,429077,Rows in deterministic test split.
+train_positive_rate,0.043488,Positive rate in train split.
+test_positive_rate,0.043778,Positive rate in test split.
+roc_auc,0.840501,Area under ROC curve.
+pr_auc,0.254436,Area under precision-recall curve.
+threshold,0.5,Threshold used for confusion matrix.
+tp,13637,True positives at threshold.
+fp,89245,False positives at threshold.
+tn,321048,True negatives at threshold.
+fn,5147,False negatives at threshold.
+precision,0.13255,Precision at threshold.
+recall,0.72599,Recall at threshold.
+f1,0.224171,F1 at threshold.

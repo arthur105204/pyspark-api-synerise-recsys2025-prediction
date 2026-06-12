@@ -35,7 +35,7 @@
 | Preprocessing | Completed pending review | Spark preprocessing outputs and sanitized validation artifacts generated |
 | Feature engineering | Completed pending review | User-level feature table and sanitized feature artifacts generated |
 | Label construction | Completed pending review | Spark label and training outputs generated with sanitized validation artifacts |
-| Modeling | Not started | Requires label decision first |
+| Modeling | Completed pending review | Baseline Spark ML model and sanitized aggregate metrics generated |
 | API | Not started | Requires prediction table first |
 | Commit/push | Done | Stable foundation commit pushed to `origin/master` |
 
@@ -418,11 +418,30 @@ Guardrails:
 - Do not over-tune before baseline metrics are understood.
 - Use clear train/validation split logic.
 - Do not report metrics without explaining what they mean.
+- Use Spark ML / PySpark for modeling.
+- Do not implement API serving.
+- Do not create production batch scoring outputs.
+
+Planned outputs:
+
+- `data/models/purchase_propensity_baseline/`
+
+Planned artifacts:
+
+- `artifacts/modeling/baseline_model_summary.json`
+- `artifacts/modeling/baseline_metrics.csv`
+- `artifacts/modeling/topk_metrics.csv`
+- `artifacts/modeling/feature_processing_summary.csv`
+- `artifacts/modeling/baseline_model_notes.md`
 
 Verification/Test Steps:
 
 - Train baseline Logistic Regression or another simple model.
-- Optionally compare with Random Forest or GBT later.
+- Use median imputation for numeric features.
+- Use class weights for label imbalance unless runtime constraints require disabling them.
+- Compute ROC-AUC and PR-AUC.
+- Compute confusion matrix at threshold `0.5`.
+- Compute TopK precision, recall, and lift at `1%`, `5%`, and `10%`.
 - Record:
   - input table
   - label
@@ -437,19 +456,24 @@ Verification/Test Steps:
 Definition of Done:
 
 - Baseline model trains successfully.
+- Model is saved under `data/models/purchase_propensity_baseline/`.
 - Metrics are generated.
+- Sanitized modeling artifacts are generated.
 - Report includes results and interpretation.
 - Fine-tuning options are documented.
+- No API serving, production scoring endpoint, or row-level prediction artifact is created.
 
 Review Questions:
 
 - Is the baseline better than naive prediction?
 - Are features meaningful?
 - Is the split valid?
+- Are ROC-AUC, PR-AUC, and TopK metrics acceptable for the MVP?
+- Is class weighting helpful enough to keep enabled?
 - What should be tuned next?
 
 Status:
-Not started.
+Completed pending review. `jobs/05_train_baseline_model.py` generated the baseline Spark ML model and sanitized aggregate artifacts under `artifacts/modeling/`. The model used 36 features, median imputation, class weights, and an 80/20 split with seed `42`. Test ROC-AUC is 0.840501 and PR-AUC is 0.254436.
 
 ### Phase 6: Batch Scoring
 
@@ -566,11 +590,10 @@ Not started.
 
 ## 4. Immediate Next Actions
 
-1. Review Phase 4 label construction artifacts.
-2. Confirm the label definition, class balance, and target-window boundary rule.
-3. Confirm no leakage from target-window behavior into features.
-4. Confirm the null handling strategy for model inputs.
-5. Decide whether Phase 5 should proceed to baseline modeling.
+1. Review generated modeling artifacts under `artifacts/modeling/`.
+2. Confirm ROC-AUC, PR-AUC, threshold metrics, and TopK metrics.
+3. Confirm feature processing, imputation, and class weighting choices.
+4. Decide whether Phase 6 should proceed to batch scoring.
 
 ## 5. Agent Instruction Setup
 
