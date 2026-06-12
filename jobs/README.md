@@ -240,3 +240,69 @@ artifacts/preprocessing/preprocessing_notes.md
 ```
 
 `data/processed/` is ignored by default and should not be committed.
+
+## `03_build_features.py`
+
+This job runs Phase 3 feature engineering for the provisional purchase propensity MVP direction.
+
+It reads processed Spark Parquet tables from `data/processed/` and creates user-level aggregate features before the configured cutoff date.
+
+Default inputs:
+
+- `data/processed/events/add_to_cart/`
+- `data/processed/events/remove_from_cart/`
+- `data/processed/events/product_buy/`
+- `data/processed/product_properties_clean/`
+
+Search input is included automatically when available, or explicitly with `--include-search`:
+
+- `data/processed/events/search_query/`
+
+`page_visit` is not used in this phase.
+
+### How to Run
+
+```powershell
+python jobs/03_build_features.py
+```
+
+Explicit search features:
+
+```powershell
+python jobs/03_build_features.py --include-search
+```
+
+WSL/Linux uses the same command from the project root:
+
+```bash
+python jobs/03_build_features.py --include-search
+```
+
+The job reads target/cutoff decisions from:
+
+```text
+configs/pipeline_config.yaml
+```
+
+### Feature Outputs
+
+The job writes the user-level feature table to:
+
+```text
+data/processed/features/user_behavior_features/
+```
+
+Sanitized aggregate artifacts:
+
+```text
+artifacts/features/feature_summary.json
+artifacts/features/feature_catalog.csv
+artifacts/features/feature_validation.csv
+artifacts/features/feature_notes.md
+```
+
+This job does not create final labels, train models, create batch predictions, or implement API serving. Feature data under `data/processed/` is ignored by default and should not be committed.
+
+### Feature Engineering Runtime Note
+
+The feature job uses Spark to read processed Parquet inputs and Spark `DataFrameWriter` to write the feature table. On Windows local Spark, reading or writing local Parquet directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.

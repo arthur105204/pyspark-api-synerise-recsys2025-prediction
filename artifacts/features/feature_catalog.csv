@@ -1,0 +1,37 @@
+feature_name,data_type,feature_group,description
+add_to_cart_count,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+distinct_add_to_cart_sku_count,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+days_since_last_add_to_cart,int,recency,Aggregate recency feature computed before cutoff.
+add_to_cart_count_30d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+add_to_cart_count_60d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+add_to_cart_count_90d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+remove_from_cart_count,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+distinct_remove_from_cart_sku_count,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+days_since_last_remove_from_cart,int,recency,Aggregate recency feature computed before cutoff.
+remove_from_cart_count_30d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+remove_from_cart_count_60d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+remove_from_cart_count_90d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+product_buy_count,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+distinct_product_buy_sku_count,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+days_since_last_product_buy,int,recency,Aggregate recency feature computed before cutoff.
+product_buy_count_30d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+product_buy_count_60d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+product_buy_count_90d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+distinct_cart_category_count,bigint,product_metadata,Aggregate product_metadata feature computed before cutoff.
+avg_cart_price,double,product_metadata,Aggregate product_metadata feature computed before cutoff.
+max_cart_price,bigint,product_metadata,Aggregate product_metadata feature computed before cutoff.
+distinct_bought_category_count,bigint,product_metadata,Aggregate product_metadata feature computed before cutoff.
+avg_bought_price,double,product_metadata,Aggregate product_metadata feature computed before cutoff.
+max_bought_price,bigint,product_metadata,Aggregate product_metadata feature computed before cutoff.
+search_query_count,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+distinct_search_days,bigint,other,Aggregate other feature computed before cutoff.
+days_since_last_search_query,int,recency,Aggregate recency feature computed before cutoff.
+search_query_count_30d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+search_query_count_60d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+search_query_count_90d,bigint,activity_count,Aggregate activity_count feature computed before cutoff.
+active_days_count,bigint,activity_count,Number of distinct active event dates before cutoff.
+is_eligible_purchase_propensity,int,cohort_indicator,Cohort indicator: client had add_to_cart or product_buy activity before cutoff.
+buy_to_cart_ratio,double,ratio,product_buy_count divided by add_to_cart_count when cart count is positive.
+remove_to_cart_ratio,double,ratio,remove_from_cart_count divided by add_to_cart_count when cart count is positive.
+cart_minus_remove_count,bigint,ratio,add_to_cart_count minus remove_from_cart_count.
+search_to_cart_ratio,double,ratio,search_query_count divided by add_to_cart_count when cart count is positive.

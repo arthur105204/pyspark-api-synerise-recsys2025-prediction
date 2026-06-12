@@ -2,7 +2,7 @@
 
 This project builds a PySpark-based customer behavior scoring pipeline from the Synerise RecSys 2025 dataset. The intended final flow is raw event logs, PySpark processing, EDA, feature engineering, simple model training, batch prediction output, and an API that can return prediction results for a user or client id.
 
-Current milestone: Phase 2: Preprocessing.
+Current milestone: Phase 3: Feature Engineering.
 
 ## Folder Structure
 
@@ -13,10 +13,12 @@ jobs/00_inspect_raw_data.py        Raw data inspection job
 jobs/01_eda_summary.py             Phase 1 EDA summary job
 jobs/01b_target_feasibility_eda.py Phase 1.1 business target selection EDA job
 jobs/02_preprocess_events.py       Phase 2 preprocessing job
+jobs/03_build_features.py          Phase 3 feature engineering job
 jobs/README.md                    Job usage notes
 artifacts/metadata/               Small generated metadata summaries
 artifacts/eda/                    Generated EDA summaries
 artifacts/preprocessing/          Generated preprocessing validation summaries
+artifacts/features/               Generated feature validation summaries
 configs/pipeline_config.yaml      Pipeline target and path configuration
 ```
 
@@ -118,12 +120,43 @@ artifacts/preprocessing/preprocessing_notes.md
 
 `data/processed/` is ignored by git and should not be committed.
 
+## Run Feature Engineering
+
+Default feature engineering:
+
+```powershell
+python jobs/03_build_features.py
+```
+
+Feature engineering with explicit search features:
+
+```powershell
+python jobs/03_build_features.py --include-search
+```
+
+The feature job writes a Spark Parquet user-level feature table under:
+
+```text
+data/processed/features/user_behavior_features/
+```
+
+Feature artifacts are written to:
+
+```text
+artifacts/features/feature_summary.json
+artifacts/features/feature_catalog.csv
+artifacts/features/feature_validation.csv
+artifacts/features/feature_notes.md
+```
+
+This phase creates features only. It does not create final labels, train models, create prediction outputs, or implement API serving.
+
 ## Current Status
 
 - The project direction is documented as customer behavior scoring from event logs.
-- Raw inspection, EDA, business target selection, and preprocessing jobs are implemented.
+- Raw inspection, EDA, business target selection, preprocessing, and feature engineering jobs are implemented.
 - The current MVP target remains purchase propensity with a provisional 30-day target window.
-- Feature engineering, final labels, modeling, batch scoring, and API code are intentionally not included in this milestone.
+- Final labels, modeling, batch scoring, and API code are intentionally not included in this milestone.
 - Raw data and large generated outputs are ignored by git.
 
 ## Agent Instructions
@@ -132,4 +165,4 @@ This repo includes `AGENTS.md` and a small set of Codex skills for data privacy,
 
 ## Next Step
 
-Review the preprocessing validation artifacts, then decide whether Phase 3 feature engineering can begin.
+Review the feature engineering artifacts, then decide whether Phase 4 label construction can begin.

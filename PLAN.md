@@ -33,7 +33,7 @@
 | EDA | Completed | Full-count EDA artifacts generated and refined for readability |
 | Business target selection EDA | Completed | Purchase propensity selected as provisional MVP target |
 | Preprocessing | Completed pending review | Spark preprocessing outputs and sanitized validation artifacts generated |
-| Feature engineering | Not started | Requires preprocessing review first |
+| Feature engineering | Completed pending review | User-level feature table and sanitized feature artifacts generated |
 | Modeling | Not started | Requires label decision first |
 | API | Not started | Requires prediction table first |
 | Commit/push | Done | Stable foundation commit pushed to `origin/master` |
@@ -275,7 +275,7 @@ Completed pending review. Default preprocessing plus optional search preprocessi
 ### Phase 3: Feature Engineering
 
 Goal:
-Create a user-level feature table from event logs.
+Create a leakage-safe user-level feature table from processed event logs.
 
 Guardrails:
 
@@ -283,6 +283,24 @@ Guardrails:
 - Do not create high-cardinality one-hot features without review.
 - Do not include target-window information in feature-window data.
 - Do not create features that cannot be explained.
+- Do not create final labels yet.
+- Do not train models.
+- Do not create batch predictions or API outputs.
+
+Planned/generated outputs:
+
+- `data/processed/features/user_behavior_features/`
+
+Planned/generated artifacts:
+
+- `artifacts/features/feature_summary.json`
+- `artifacts/features/feature_catalog.csv`
+- `artifacts/features/feature_validation.csv`
+- `artifacts/features/feature_notes.md`
+
+Configuration:
+
+- `configs/pipeline_config.yaml` stores `cutoff_date` and `target_end` for leakage-safe feature construction.
 
 Verification/Test Steps:
 
@@ -297,6 +315,9 @@ Verification/Test Steps:
   - time-window features if timestamp is reliable
 - Generate feature dictionary.
 - Validate row count and null/default handling.
+- Confirm no final label column is created.
+- Confirm Spark writer is used for feature Parquet output.
+- Confirm artifacts contain aggregate validation only.
 
 Definition of Done:
 
@@ -304,16 +325,23 @@ Definition of Done:
 - Feature dictionary is documented.
 - Report lists feature groups, source tables, input columns, output columns, logic, and rationale.
 - Feature table is ready for label definition/modeling.
+- Feature artifacts are generated under `artifacts/features/`.
+- `docs/project_report.md` includes actual feature engineering findings from generated artifacts.
+- No final label table, model training, batch scoring, or API code is added.
 
 Review Questions:
 
-- Which features are most meaningful for churn?
-- Which features are useful for propensity?
+- Are the feature groups sufficient for a baseline purchase propensity model?
+- Are recency/count/ratio/product metadata features valid?
+- Is the eligible cohort indicator correct?
+- Are null/fill strategies acceptable?
+- Are duplicate handling assumptions acceptable?
 - Are any features leaking future behavior?
 - Are high-cardinality fields controlled?
+- Should Phase 4 proceed to label construction?
 
 Status:
-Not started.
+Completed pending review. The feature engineering job generated `data/processed/features/user_behavior_features/` and sanitized artifacts under `artifacts/features/`. The feature table has 2,810,342 rows, 36 features, and an eligible purchase propensity cohort count of 2,149,796. Search features were included and `page_visit` remains deferred.
 
 ### Phase 4: Label Definition
 
@@ -512,11 +540,11 @@ Not started.
 
 ## 4. Immediate Next Actions
 
-1. Review refined Phase 1 EDA artifacts.
-2. Review Phase 1.1 business target selection artifacts.
-3. Decide target window and eligible cohort.
-4. Confirm whether purchase propensity is approved as the provisional MVP target.
-5. Decide whether Phase 2 should proceed to preprocessing.
+1. Review Phase 3 feature artifacts.
+2. Review duplicate handling assumptions before label construction.
+3. Confirm null handling strategy for recency and ratio features.
+4. Confirm whether `page_visit` remains deferred for the MVP.
+5. Decide whether Phase 4 should proceed to label construction.
 
 ## 5. Agent Instruction Setup
 
@@ -557,3 +585,5 @@ Before every commit:
 | 2026-06-11 | Agent instruction setup | Done | Minimal AGENTS and three focused skills added |
 | 2026-06-11 | Phase 1 | Completed | Full-count EDA job ran and generated sanitized EDA artifacts |
 | 2026-06-11 | Phase 1.1 | Completed pending review | Business target selection EDA generated aggregate-only comparison artifacts |
+| 2026-06-12 | Phase 2 | Completed | Preprocessing pipeline generated local processed tables and sanitized validation artifacts |
+| 2026-06-12 | Phase 3 | Completed pending review | Feature engineering generated user-level features and sanitized validation artifacts |

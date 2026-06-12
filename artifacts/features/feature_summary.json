@@ -1,0 +1,54 @@
+{
+  "generated_at_date": "2026-06-12",
+  "phase": "Phase 3: Feature Engineering",
+  "status": "success",
+  "feature_output_path": "data/processed/features/user_behavior_features",
+  "artifact_paths": {
+    "summary": "artifacts/features/feature_summary.json",
+    "catalog": "artifacts/features/feature_catalog.csv",
+    "validation": "artifacts/features/feature_validation.csv",
+    "notes": "artifacts/features/feature_notes.md"
+  },
+  "target_task": "purchase_propensity",
+  "target_window_days": 30,
+  "cutoff_date": "2022-11-09",
+  "target_end": "2022-12-08",
+  "feature_window_days": [
+    30,
+    60,
+    90
+  ],
+  "search_features_included": true,
+  "page_visit_included": false,
+  "total_feature_rows": 2810342,
+  "eligible_cohort_count": 2149796,
+  "eligible_cohort_rate": 0.764959,
+  "feature_count": 36,
+  "feature_groups": [
+    "activity_count",
+    "cohort_indicator",
+    "other",
+    "product_metadata",
+    "ratio",
+    "recency"
+  ],
+  "null_fill_strategy": {
+    "count_features": "filled_with_0",
+    "recency_features": "left_null_when_client_has_no_event_type",
+    "ratio_features": "left_null_when_denominator_is_0"
+  },
+  "duplicate_handling_assumption": "Features are computed from processed rows as-is; final duplicate policy is deferred for review.",
+  "leakage_validation": {
+    "features_use_events_before_cutoff": true,
+    "target_window_events_used": false,
+    "final_label_created": false,
+    "label_like_columns": []
+  },
+  "privacy": {
+    "artifact_level": "aggregate_only",
+    "raw_client_ids_persisted": false,
+    "raw_query_text_persisted": false,
+    "product_names_persisted": false,
+    "row_samples_persisted": false
+  }
+}

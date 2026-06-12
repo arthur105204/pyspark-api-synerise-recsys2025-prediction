@@ -28,6 +28,11 @@ artifacts/*
 !artifacts/preprocessing/duplicate_check_summary.csv
 !artifacts/preprocessing/product_metadata_validation.csv
 !artifacts/preprocessing/preprocessing_notes.md
+!artifacts/features/
+!artifacts/features/feature_summary.json
+!artifacts/features/feature_catalog.csv
+!artifacts/features/feature_validation.csv
+!artifacts/features/feature_notes.md
 outputs/
 models/
 *.model

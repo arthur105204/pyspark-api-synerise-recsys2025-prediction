@@ -19,6 +19,8 @@ columns:
 target:
   task: purchase_propensity
   target_window_days: 30
+  cutoff_date: "2022-11-09"
+  target_end: "2022-12-08"
   eligible_cohort: add_to_cart_or_purchase_in_history
   positive_definition: purchase_in_target_window
   leakage_rule: features_before_cutoff_labels_in_target_window

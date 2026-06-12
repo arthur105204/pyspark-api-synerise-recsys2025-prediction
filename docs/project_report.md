@@ -562,6 +562,86 @@ Open questions:
 Next decision before feature engineering:
 Approve the cleaned event/product tables and duplicate handling strategy before moving to Phase 3 feature engineering.
 
+## Feature Engineering Milestone Summary
+
+Objective:
+Create leakage-safe user-level feature tables for the provisional purchase propensity task.
+
+Input processed tables:
+
+- `data/processed/events/add_to_cart/`
+- `data/processed/events/remove_from_cart/`
+- `data/processed/events/product_buy/`
+- `data/processed/events/search_query/`
+- `data/processed/product_properties_clean/`
+
+Deferred input:
+
+- `page_visit` remains deferred and is not used in the Phase 3 feature table.
+
+Leakage rule:
+Features use events before the configured cutoff date, `2022-11-09`. Target-window events from `2022-11-09` through `2022-12-08` are not used in feature calculations. This phase does not create final labels.
+
+Feature groups generated:
+
+- Activity count features for add-to-cart, remove-from-cart, purchase, and search activity.
+- Recency features using days since the last event of each processed event type.
+- Distinct interaction features such as distinct SKU counts and distinct search days.
+- Ratio features such as buy-to-cart, remove-to-cart, and search-to-cart ratios.
+- Product metadata features using category and price from cleaned product metadata.
+- Windowed 30-day, 60-day, and 90-day lookback count features.
+- Eligible cohort indicator for the later purchase propensity label construction step.
+
+Output feature table:
+
+- `data/processed/features/user_behavior_features/`
+
+Output artifacts:
+
+- `artifacts/features/feature_summary.json`
+- `artifacts/features/feature_catalog.csv`
+- `artifacts/features/feature_validation.csv`
+- `artifacts/features/feature_notes.md`
+
+Validation results:
+
+- Feature rows: 2,810,342
+- Eligible cohort count: 2,149,796
+- Eligible cohort rate: 0.764959
+- Feature count: 36
+- Search features included: True
+- `page_visit` included: False
+- Label-like columns detected: none
+
+Selected feature validation examples:
+
+| Feature | Null rate | Min | Max | Average |
+| --- | ---: | ---: | ---: | ---: |
+| `add_to_cart_count` | 0.000000 | 0 | 1,560 | 1.998546 |
+| `product_buy_count` | 0.000000 | 0 | 644 | 0.626121 |
+| `search_query_count` | 0.000000 | 0 | 3,264 | 3.602982 |
+| `active_days_count` | 0.000000 | 1 | 125 | 1.629863 |
+| `is_eligible_purchase_propensity` | 0.000000 | 0 | 1 | 0.764959 |
+
+Null and fill strategy:
+Count-style features are filled with 0. Recency features remain null when a client has no event of that type. Ratio features remain null when the denominator is 0.
+
+Duplicate handling assumption:
+Features are computed from processed rows as-is. Phase 2 duplicate diagnostics remain part of the review context, and the final duplicate policy is deferred for review before label construction or modeling.
+
+Interpretation:
+The generated feature table covers all clients observed in the processed event inputs before the cutoff. The eligible cohort indicator identifies clients with add-to-cart or purchase activity before cutoff, but it is not a final label. This keeps Phase 3 scoped to feature creation only.
+
+Open questions before Phase 4 label construction:
+
+- Should duplicate event rows count as repeated behavior, or should specific duplicate keys be collapsed before modeling?
+- Are the current 36 features sufficient for a baseline purchase propensity model?
+- Should `page_visit` remain deferred for the MVP?
+- Should missing recency and ratio values stay null or be filled during modeling preparation?
+
+Next decision before modeling:
+Approve the feature table and duplicate/null assumptions, then proceed to Phase 4 label construction.
+
 ## 9. Risks and Open Questions
 
 - Compressed/archive file handling: if the dataset is provided as an archive in another environment, the inner Parquet files must be made available before Spark table ingestion.
@@ -575,30 +655,29 @@ Approve the cleaned event/product tables and duplicate handling strategy before 
 ## 10. Current Milestone
 
 Current milestone:
-Phase 2: Preprocessing.
+Phase 3: Feature Engineering.
 
 Done in this milestone:
 
-- preprocessing job
-- pipeline configuration
-- processed intermediate Spark Parquet outputs generated locally
-- sanitized preprocessing validation artifacts
+- feature engineering job
+- user-level feature table generated locally
+- sanitized feature validation artifacts
+- pipeline configuration updated with cutoff and target dates
 - README update
 - jobs README update
-- report preprocessing findings update
+- report feature engineering findings update
 - PLAN phase status update
 
 Not included yet:
 
-- feature engineering
 - final label tables
 - modeling
 - API
 
 ## 11. Next Steps
 
-1. Review preprocessing validation artifacts.
-2. Decide duplicate handling for feature aggregation.
-3. Confirm whether `search_query` should contribute features without raw query text.
+1. Review feature engineering artifacts.
+2. Decide duplicate handling before label construction and modeling.
+3. Confirm whether missing recency and ratio values should stay null for modeling preparation.
 4. Decide whether `page_visit` should remain deferred for the MVP.
-5. Move to feature engineering only after preprocessing review.
+5. Move to label construction only after feature review.
