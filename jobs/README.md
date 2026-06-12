@@ -306,3 +306,78 @@ This job does not create final labels, train models, create batch predictions, o
 ### Feature Engineering Runtime Note
 
 The feature job uses Spark to read processed Parquet inputs and Spark `DataFrameWriter` to write the feature table. On Windows local Spark, reading or writing local Parquet directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.
+
+## `04_build_labels.py`
+
+This job runs Phase 4 label construction for the purchase propensity 30-day task.
+
+Inputs:
+
+- `data/processed/features/user_behavior_features/`
+- `data/processed/events/product_buy/`
+- `configs/pipeline_config.yaml`
+
+Label definition:
+
+- Eligible clients come from `is_eligible_purchase_propensity = 1` in the Phase 3 feature table.
+- Positive label: eligible client has at least one `product_buy` event in the target window.
+- Negative label: eligible client has no `product_buy` event in the target window.
+- Boundary rule: `event_ts >= cutoff_date` and `event_ts < date_add(target_end, 1)`.
+
+The job aggregates target-window purchases to one row per `client_id`, so multiple target-window purchases increase `target_event_count` but keep the final `label` binary.
+
+### How to Run
+
+```powershell
+python jobs/04_build_labels.py
+```
+
+With explicit config:
+
+```powershell
+python jobs/04_build_labels.py --config configs/pipeline_config.yaml
+```
+
+WSL/Linux uses the same command from the project root:
+
+```bash
+python jobs/04_build_labels.py
+```
+
+### Label Outputs
+
+The job writes the label table to:
+
+```text
+data/processed/labels/purchase_propensity_30d/
+```
+
+The job writes the training-ready dataset to:
+
+```text
+data/processed/training/purchase_propensity_30d/
+```
+
+Sanitized aggregate artifacts:
+
+```text
+artifacts/labels/label_summary.json
+artifacts/labels/label_validation.csv
+artifacts/labels/training_dataset_validation.csv
+artifacts/labels/label_notes.md
+```
+
+Latest validated output:
+
+- label row count: 2,149,796
+- positive labels: 93,614
+- negative labels: 2,056,182
+- positive rate: 0.043546
+- training dataset row count: 2,149,796
+- feature count used: 36
+
+This job does not train a model, evaluate a model, create predictions, create batch scoring outputs, or implement API serving. Label and training data under `data/processed/` is ignored by default and should not be committed.
+
+### Label Construction Runtime Note
+
+The label job uses Spark to read processed Parquet inputs and Spark `DataFrameWriter` to write the label and training tables. On Windows local Spark, reading or writing local Parquet directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.

@@ -1,0 +1,7 @@
+check_name,status,observed_value,expected_value,notes
+label_row_count_equals_eligible_cohort_count,pass,2149796,2149796,Only eligible clients are included in the label table.
+positive_count_matches_phase_1_1,pass,93614,93614,Positive clients have at least one product_buy event in the target window.
+label_values_only_0_or_1,pass,0,0,Labels are binary.
+no_null_labels,pass,0,0,No null labels are allowed.
+no_duplicate_client_id_in_label_table,pass,0,0,Target-window purchases are aggregated before joining labels.
+target_window_boundary_rule_documented,pass,"event_ts >= cutoff_date and event_ts < date_add(target_end, 1)","event_ts >= cutoff_date and event_ts < date_add(target_end, 1)",Half-open interval includes cutoff date and excludes the day after target_end.

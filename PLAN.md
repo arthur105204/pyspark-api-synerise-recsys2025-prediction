@@ -34,6 +34,7 @@
 | Business target selection EDA | Completed | Purchase propensity selected as provisional MVP target |
 | Preprocessing | Completed pending review | Spark preprocessing outputs and sanitized validation artifacts generated |
 | Feature engineering | Completed pending review | User-level feature table and sanitized feature artifacts generated |
+| Label construction | Completed pending review | Spark label and training outputs generated with sanitized validation artifacts |
 | Modeling | Not started | Requires label decision first |
 | API | Not started | Requires prediction table first |
 | Commit/push | Done | Stable foundation commit pushed to `origin/master` |
@@ -346,22 +347,42 @@ Completed pending review. The feature engineering job generated `data/processed/
 ### Phase 4: Label Definition
 
 Goal:
-Define the first prediction target clearly.
+Define the first prediction target clearly and create a training-ready dataset.
 
 Guardrails:
 
 - Label must be explainable.
 - Feature window and target window must be separated.
-- Do not finalize churn label without timestamp validation.
+- Use the purchase propensity 30-day target selected in Phase 1.1.
 - Do not use target behavior as input feature.
+- Do not train or evaluate a model.
+- Do not create predictions, batch scoring outputs, or API code.
+
+Planned outputs:
+
+- `data/processed/labels/purchase_propensity_30d/`
+- `data/processed/training/purchase_propensity_30d/`
+
+Planned artifacts:
+
+- `artifacts/labels/label_summary.json`
+- `artifacts/labels/label_validation.csv`
+- `artifacts/labels/training_dataset_validation.csv`
+- `artifacts/labels/label_notes.md`
 
 Verification/Test Steps:
 
-- Define candidate churn label.
-- Define candidate propensity label if needed.
+- Build labels with `jobs/04_build_labels.py`.
+- Use eligible clients from `is_eligible_purchase_propensity = 1`.
+- Define positive label from `product_buy` events in the target window.
 - Check class distribution.
 - Check whether enough users have usable labels.
 - Document label logic precisely.
+- Confirm label row count equals eligible cohort count.
+- Confirm positive count is consistent with Phase 1.1.
+- Confirm no null labels and only `0`/`1` values.
+- Confirm no duplicate `client_id` in label or training data.
+- Confirm no model, prediction, batch scoring, or API output is created.
 
 Definition of Done:
 
@@ -369,16 +390,21 @@ Definition of Done:
 - Label definition is documented.
 - Label distribution is computed.
 - Data leakage checks are documented.
+- Label table exists under `data/processed/labels/purchase_propensity_30d/`.
+- Training-ready dataset exists under `data/processed/training/purchase_propensity_30d/`.
+- Sanitized label artifacts are generated.
+- Report includes actual label construction findings from artifacts.
 
 Review Questions:
 
-- Is churn prediction still the best MVP?
-- Is propensity easier or more natural from the data?
+- Does the purchase propensity label match the business problem?
 - Is the class distribution usable?
-- Does the label match the business problem?
+- Does the positive count match Phase 1.1 expectations?
+- Is the target-window boundary rule acceptable?
+- Should Phase 5 proceed to baseline modeling?
 
 Status:
-Not started.
+Completed pending review. `jobs/04_build_labels.py` generated the purchase propensity 30-day label table, training-ready dataset, and sanitized artifacts under `artifacts/labels/`. The label table has 2,149,796 rows, 93,614 positive labels, 2,056,182 negative labels, and a 0.043546 positive rate. The training-ready dataset has 2,149,796 rows and 36 features.
 
 ### Phase 5: Baseline Modeling
 
@@ -540,11 +566,11 @@ Not started.
 
 ## 4. Immediate Next Actions
 
-1. Review Phase 3 feature artifacts.
-2. Review duplicate handling assumptions before label construction.
-3. Confirm null handling strategy for recency and ratio features.
-4. Confirm whether `page_visit` remains deferred for the MVP.
-5. Decide whether Phase 4 should proceed to label construction.
+1. Review Phase 4 label construction artifacts.
+2. Confirm the label definition, class balance, and target-window boundary rule.
+3. Confirm no leakage from target-window behavior into features.
+4. Confirm the null handling strategy for model inputs.
+5. Decide whether Phase 5 should proceed to baseline modeling.
 
 ## 5. Agent Instruction Setup
 

@@ -632,7 +632,7 @@ Features are computed from processed rows as-is. Phase 2 duplicate diagnostics r
 Interpretation:
 The generated feature table covers all clients observed in the processed event inputs before the cutoff. The eligible cohort indicator identifies clients with add-to-cart or purchase activity before cutoff, but it is not a final label. This keeps Phase 3 scoped to feature creation only.
 
-Open questions before Phase 4 label construction:
+Review questions after feature engineering:
 
 - Should duplicate event rows count as repeated behavior, or should specific duplicate keys be collapsed before modeling?
 - Are the current 36 features sufficient for a baseline purchase propensity model?
@@ -640,44 +640,116 @@ Open questions before Phase 4 label construction:
 - Should missing recency and ratio values stay null or be filled during modeling preparation?
 
 Next decision before modeling:
-Approve the feature table and duplicate/null assumptions, then proceed to Phase 4 label construction.
+Review the generated labels and confirm whether the current feature table is sufficient for baseline modeling.
+
+## Label Construction Milestone Summary
+
+Objective:
+Create a supervised purchase propensity label and a training-ready dataset for baseline modeling.
+
+Input feature table:
+`data/processed/features/user_behavior_features/`
+
+Input event table:
+`data/processed/events/product_buy/`
+
+Process:
+The label job selects eligible clients from the Phase 3 feature table, reads target-window purchase events, aggregates purchases to one binary label row per client, and joins labels back to the eligible feature rows to create a training-ready dataset.
+
+Cutoff date:
+`2022-11-09`
+
+Target window:
+30 days, from `2022-11-09` through `2022-12-08`.
+
+Boundary rule:
+`event_ts >= cutoff_date and event_ts < date_add(target_end, 1)`.
+
+Eligible cohort:
+2,149,796 clients with add-to-cart or purchase activity in the history window.
+
+Label definition:
+Positive label means an eligible client has at least one `product_buy` event in the target window. Negative label means no `product_buy` event in the target window.
+
+Output label table:
+`data/processed/labels/purchase_propensity_30d/`
+
+Output training-ready dataset:
+`data/processed/training/purchase_propensity_30d/`
+
+Result:
+
+| Metric | Value |
+| --- | ---: |
+| Label row count | 2,149,796 |
+| Positive count | 93,614 |
+| Negative count | 2,056,182 |
+| Positive rate | 0.043546 |
+| Training dataset row count | 2,149,796 |
+| Feature count used | 36 |
+
+Validation results:
+
+- Label row count equals the eligible cohort count.
+- Positive count matches the Phase 1.1 purchase propensity 30-day result.
+- Label values are binary `0` and `1`.
+- No null labels were found.
+- No duplicate `client_id` values were found in the label table.
+- No duplicate `client_id` values were found in the training-ready dataset.
+- The training-ready dataset contains no prediction or model output columns.
+
+Leakage checks:
+Features come from the Phase 3 feature table, while labels use only `product_buy` events in the target window. No target-window features were created, and no preexisting label-like columns were found in the feature table.
+
+Duplicate handling:
+Multiple target-window purchases for the same client are aggregated into one binary label row. The count of target-window purchases is retained in the local label table, while the training-ready dataset keeps the final binary label.
+
+Null strategy:
+Feature nulls are preserved from Phase 3. Model-stage imputation is deferred to baseline modeling.
+
+Interpretation:
+The 30-day purchase propensity label is now available for the eligible cohort. The positive rate is low but usable for a baseline classification task, and the generated validation artifacts support moving to a modeling review gate.
+
+Next step:
+Baseline modeling after mentor review of the label definition, class balance, leakage checks, and null strategy.
 
 ## 9. Risks and Open Questions
 
 - Compressed/archive file handling: if the dataset is provided as an archive in another environment, the inner Parquet files must be made available before Spark table ingestion.
 - Schema interpretation: column names and data types are initially verified, but table relationships and business meaning still need EDA review.
-- Missing or unclear label: the first prediction target still needs to be selected from the available data.
+- Class imbalance: the positive label rate is low and should be handled carefully during baseline modeling.
 - Possible data leakage: label windows and feature windows must be separated carefully.
 - High-cardinality columns: user, item, category, or event attributes may require careful encoding or aggregation.
 - Large file handling: full row counts and schema inference may be expensive on large files.
-- First modeling task: purchase propensity is the provisional MVP target, pending preprocessing validation.
+- First modeling task: purchase propensity is the current MVP target, pending modeling review.
 
 ## 10. Current Milestone
 
 Current milestone:
-Phase 3: Feature Engineering.
+Phase 4: Label Construction.
 
 Done in this milestone:
 
-- feature engineering job
-- user-level feature table generated locally
-- sanitized feature validation artifacts
-- pipeline configuration updated with cutoff and target dates
+- label construction job added
+- label definition encoded for the purchase propensity 30-day task
+- label table generated
+- training-ready dataset generated
+- aggregate label validation artifacts generated
+- leakage and duplicate validation completed
 - README update
 - jobs README update
-- report feature engineering findings update
 - PLAN phase status update
 
 Not included yet:
 
-- final label tables
 - modeling
+- evaluation metrics
+- prediction outputs
 - API
 
 ## 11. Next Steps
 
-1. Review feature engineering artifacts.
-2. Decide duplicate handling before label construction and modeling.
-3. Confirm whether missing recency and ratio values should stay null for modeling preparation.
-4. Decide whether `page_visit` should remain deferred for the MVP.
-5. Move to label construction only after feature review.
+1. Review the Phase 4 label definition and validation artifacts.
+2. Confirm the class balance and target-window boundary rule.
+3. Confirm the null handling strategy for baseline modeling.
+4. Move to Phase 5 baseline modeling only after label construction review.

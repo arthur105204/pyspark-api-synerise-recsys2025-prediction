@@ -2,7 +2,7 @@
 
 This project builds a PySpark-based customer behavior scoring pipeline from the Synerise RecSys 2025 dataset. The intended final flow is raw event logs, PySpark processing, EDA, feature engineering, simple model training, batch prediction output, and an API that can return prediction results for a user or client id.
 
-Current milestone: Phase 3: Feature Engineering.
+Current milestone: Phase 4: Label Construction.
 
 ## Folder Structure
 
@@ -14,11 +14,13 @@ jobs/01_eda_summary.py             Phase 1 EDA summary job
 jobs/01b_target_feasibility_eda.py Phase 1.1 business target selection EDA job
 jobs/02_preprocess_events.py       Phase 2 preprocessing job
 jobs/03_build_features.py          Phase 3 feature engineering job
+jobs/04_build_labels.py            Phase 4 label construction job
 jobs/README.md                    Job usage notes
 artifacts/metadata/               Small generated metadata summaries
 artifacts/eda/                    Generated EDA summaries
 artifacts/preprocessing/          Generated preprocessing validation summaries
 artifacts/features/               Generated feature validation summaries
+artifacts/labels/                 Generated label validation summaries
 configs/pipeline_config.yaml      Pipeline target and path configuration
 ```
 
@@ -151,12 +153,42 @@ artifacts/features/feature_notes.md
 
 This phase creates features only. It does not create final labels, train models, create prediction outputs, or implement API serving.
 
+## Run Label Construction
+
+```powershell
+python jobs/04_build_labels.py
+```
+
+The label job writes a Spark Parquet label table under:
+
+```text
+data/processed/labels/purchase_propensity_30d/
+```
+
+It also writes a training-ready dataset under:
+
+```text
+data/processed/training/purchase_propensity_30d/
+```
+
+Label artifacts are written to:
+
+```text
+artifacts/labels/label_summary.json
+artifacts/labels/label_validation.csv
+artifacts/labels/training_dataset_validation.csv
+artifacts/labels/label_notes.md
+```
+
+This phase creates supervised labels and a training-ready dataset only. It does not train a model, create predictions, or implement API serving.
+
 ## Current Status
 
 - The project direction is documented as customer behavior scoring from event logs.
-- Raw inspection, EDA, business target selection, preprocessing, and feature engineering jobs are implemented.
-- The current MVP target remains purchase propensity with a provisional 30-day target window.
-- Final labels, modeling, batch scoring, and API code are intentionally not included in this milestone.
+- Raw inspection, EDA, business target selection, preprocessing, feature engineering, and label construction jobs are implemented.
+- The current MVP target is purchase propensity with a 30-day target window.
+- Phase 4 label construction has generated aggregate validation artifacts and local processed Spark Parquet outputs.
+- Modeling, batch scoring, and API code are intentionally not included in this milestone.
 - Raw data and large generated outputs are ignored by git.
 
 ## Agent Instructions
@@ -165,4 +197,4 @@ This repo includes `AGENTS.md` and a small set of Codex skills for data privacy,
 
 ## Next Step
 
-Review the feature engineering artifacts, then decide whether Phase 4 label construction can begin.
+Review the Phase 4 label artifacts and decide whether Phase 5 baseline modeling should begin.

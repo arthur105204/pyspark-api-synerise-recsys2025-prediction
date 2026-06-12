@@ -33,6 +33,11 @@ artifacts/*
 !artifacts/features/feature_catalog.csv
 !artifacts/features/feature_validation.csv
 !artifacts/features/feature_notes.md
+!artifacts/labels/
+!artifacts/labels/label_summary.json
+!artifacts/labels/label_validation.csv
+!artifacts/labels/training_dataset_validation.csv
+!artifacts/labels/label_notes.md
 outputs/
 models/
 *.model
