@@ -1,0 +1,52 @@
+{
+  "generated_at_date": "2026-06-12",
+  "phase": "Phase 7A: Batch Score Lookup API",
+  "status": "implemented_with_limited_wsl_demo_export",
+  "service_name": "purchase-propensity-api",
+  "task": "purchase_propensity",
+  "target_window_days": 30,
+  "serving_mode": "batch_score_lookup_by_client_id",
+  "input_score_table": "data/processed/scoring/purchase_propensity_scores/",
+  "sqlite_db_path": "data/serving/purchase_propensity_scores.sqlite",
+  "sqlite_db_generated_locally": true,
+  "sqlite_db_excluded_from_git": true,
+  "demo_export_row_count": 100000,
+  "demo_export_limit": 100000,
+  "api_framework": "FastAPI",
+  "api_endpoints": [
+    "GET /health",
+    "GET /metadata",
+    "GET /scores/{client_id}"
+  ],
+  "sqlite_table": "scores",
+  "serving_columns": [
+    "client_id",
+    "prediction_score",
+    "prediction_label",
+    "model_version",
+    "scored_at"
+  ],
+  "model_version": "baseline_lr_v1",
+  "api_runs_spark_per_request": false,
+  "api_runs_model_inference_per_request": false,
+  "manual_feature_input_prediction_implemented": false,
+  "streamlit_demo_implemented": false,
+  "experiment_tracking_or_tuning_implemented": false,
+  "tests_use_fake_data_only": true,
+  "syntax_checks_passed": true,
+  "api_tests_passed": true,
+  "api_test_count": 8,
+  "windows_runtime_export_status": "failed_at_spark_parquet_read",
+  "wsl_limited_demo_export_status": "completed",
+  "wsl_limited_demo_export_command": "python jobs/07_export_serving_scores.py --limit 100000",
+  "real_sqlite_export_next_step": "review API behavior against data/serving/purchase_propensity_scores.sqlite",
+  "privacy_validation": {
+    "artifact_level": "aggregate_only",
+    "real_client_ids_persisted": false,
+    "row_level_real_scores_persisted": false,
+    "raw_query_text_persisted": false,
+    "product_names_persisted": false,
+    "local_paths_persisted": false,
+    "passed": true
+  }
+}

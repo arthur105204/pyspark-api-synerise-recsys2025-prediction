@@ -562,13 +562,13 @@ This job does not implement API serving, create an online endpoint, retrain a mo
 
 The scoring job uses Spark to read feature Parquet inputs, load the Spark ML model, and write score Parquet outputs. On Windows local Spark, reading or writing local Parquet/model directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.
 
-## Planned Phase 7/8 Jobs
+## Phase 7/8 Jobs
 
-The following jobs are planned for the next product/demo phases. They are listed here to keep the implementation plan explicit; they are not required to run until their phase starts.
+The following jobs support or are planned for the next product/demo phases.
 
 ### `07_export_serving_scores.py`
 
-Planned Phase 7A job for exporting Phase 6 batch scores to a local SQLite lookup store for the Phase 7 API.
+Phase 7A job for exporting Phase 6 batch scores to a local SQLite lookup store for the Phase 7 API.
 
 Input:
 
@@ -590,17 +590,17 @@ CREATE TABLE scores (
 );
 ```
 
-The job should create an index on `client_id` for lookup.
+The job creates an index on `client_id` for lookup.
 
 ### How to Run
 
-Planned full export:
+Full export:
 
 ```powershell
 python jobs/07_export_serving_scores.py
 ```
 
-Planned local demo export:
+Local demo export:
 
 ```powershell
 python jobs/07_export_serving_scores.py --limit 100000
@@ -618,7 +618,11 @@ WSL/Linux uses the same command from the project root:
 python jobs/07_export_serving_scores.py --limit 100000
 ```
 
-The generated SQLite database is local serving data and should not be committed. The job should not create row-level artifacts under `artifacts/`.
+The generated SQLite database is local serving data and should not be committed. The job does not create row-level artifacts under `artifacts/`.
+
+### Serving Export Runtime Note
+
+The serving export job uses Spark to read the Phase 6 scoring Parquet output and Python SQLite writes for the local lookup store. The limited demo export completed in WSL with 100000 rows. On Windows local Spark, reading local Parquet directories may require a proper Hadoop/winutils setup.
 
 ### `07_export_model_metadata.py`
 

@@ -50,6 +50,11 @@ artifacts/*
 !artifacts/scoring/score_distribution.csv
 !artifacts/scoring/scoring_validation.csv
 !artifacts/scoring/scoring_notes.md
+!artifacts/serving/
+!artifacts/serving/serving_summary.json
+!artifacts/serving/api_contract.json
+!artifacts/serving/serving_validation.csv
+!artifacts/serving/serving_notes.md
 outputs/
 models/
 *.model
@@ -79,6 +84,7 @@ env/
 .mypy_cache/
 .ruff_cache/
 .cache/
+.tmp/
 
 # notebook checkpoints
 .ipynb_checkpoints/

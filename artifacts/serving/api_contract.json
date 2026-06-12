@@ -1,0 +1,60 @@
+{
+  "phase": "Phase 7A: Batch Score Lookup API",
+  "service": "purchase-propensity-api",
+  "api_mode": "batch_score_lookup",
+  "data_source": "local SQLite lookup database exported from Phase 6 batch scores",
+  "sqlite_db_path": "data/serving/purchase_propensity_scores.sqlite",
+  "demo_export_row_count": 100000,
+  "sqlite_db_excluded_from_git": true,
+  "request_path_runs_spark": false,
+  "request_path_runs_spark_ml_inference": false,
+  "manual_feature_input_prediction_implemented": false,
+  "streamlit_demo_implemented": false,
+  "experiment_tracking_or_tuning_implemented": false,
+  "endpoints": [
+    {
+      "path": "/health",
+      "method": "GET",
+      "status_codes": [200],
+      "success_response_schema": {
+        "status": "string",
+        "service": "string"
+      }
+    },
+    {
+      "path": "/metadata",
+      "method": "GET",
+      "status_codes": [200],
+      "success_response_schema": {
+        "task": "string",
+        "target_window_days": "integer",
+        "model_version": "string",
+        "score_source": "string",
+        "api_mode": "string"
+      }
+    },
+    {
+      "path": "/scores/{client_id}",
+      "method": "GET",
+      "request_parameters": {
+        "client_id": "string"
+      },
+      "status_codes": [200, 404, 503],
+      "success_response_schema": {
+        "client_id": "string",
+        "prediction_score": "number",
+        "prediction_label": "integer",
+        "model_version": "string",
+        "scored_at": "string"
+      },
+      "error_response_schema": {
+        "detail": "string"
+      }
+    }
+  ],
+  "privacy": {
+    "examples_use_fake_client_ids_only": true,
+    "real_client_ids_persisted": false,
+    "row_level_real_scores_persisted": false
+  }
+}

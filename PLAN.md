@@ -37,7 +37,7 @@
 | Label construction | Completed pending review | Spark label and training outputs generated with sanitized validation artifacts |
 | Modeling | Completed pending review | Baseline Spark ML model and sanitized aggregate metrics generated |
 | Batch scoring | Completed pending review | Spark score table and sanitized aggregate scoring artifacts generated |
-| API serving and demo interface | Not started | Lookup API, direct feature-input prediction, and demo UI are planned next |
+| API serving and demo interface | In progress | Phase 7A lookup API scaffold, fake-data tests, and WSL limited demo SQLite export are implemented |
 | Experiment tracking and tuning | Not started | Requires offline Spark model variant plan and sanitized experiment artifacts |
 | Load/stress testing and final packaging | Not started | Requires stable API/demo surface first |
 | Commit/push | Done | Stable foundation commit pushed to `origin/master` |
@@ -613,7 +613,7 @@ Review Questions:
 - Should cache be added?
 
 Status:
-Not started. Subphase 7A should begin with the serving score export job and lookup API contract. Subphases 7B and 7C are planned but not implemented.
+In progress. Subphase 7A has the serving score export job, lookup API, SQLite repository, fake-data tests, sanitized serving artifacts, and WSL limited demo SQLite export. Syntax checks and API tests pass. The WSL demo export contains 100000 rows. The Windows runtime export failed while Spark was reading the local score Parquet output. Subphases 7B and 7C are planned but not implemented.
 
 ### Phase 8: Experiment Tracking & Hyperparameter Tuning
 
@@ -717,11 +717,10 @@ Not started.
 
 ## 4. Immediate Next Actions
 
-1. Start Phase 7A by implementing `jobs/07_export_serving_scores.py` and running `python jobs/07_export_serving_scores.py --limit 100000` in WSL/Linux or a properly configured Spark runtime.
-2. Review the lookup API contract before implementation.
-3. Plan Phase 7B lightweight model metadata export for manual feature-input prediction.
-4. Decide whether the demo UI should use Streamlit or a lightweight frontend.
-5. Keep Phase 8 offline tuning separate from API/demo implementation.
+1. Review lookup API behavior against the generated SQLite database.
+2. Review Phase 7A before staging and committing.
+3. Decide whether the demo UI should use Streamlit or a lightweight frontend.
+4. Keep Phase 8 offline tuning separate from API/demo implementation.
 
 ## 5. Agent Instruction Setup
 

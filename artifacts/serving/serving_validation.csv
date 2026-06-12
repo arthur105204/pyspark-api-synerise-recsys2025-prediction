@@ -1,0 +1,20 @@
+check_name,status,observed_value,expected_value,notes
+phase_scope,pass,Phase 7A,Phase 7A,Artifact scope is batch score lookup API only.
+health_endpoint_defined,pass,true,true,GET /health is implemented.
+metadata_endpoint_defined,pass,true,true,GET /metadata is implemented.
+score_endpoint_defined,pass,true,true,GET /scores/{client_id} is implemented.
+sqlite_repository_defined,pass,true,true,Repository reads local SQLite scores table.
+api_request_path_runs_spark,pass,false,false,API request path does not run Spark.
+api_request_path_runs_model_inference,pass,false,false,API request path does not run Spark ML inference.
+tests_use_fake_sqlite_data,pass,true,true,Tests use temporary SQLite data with fake client ids only.
+syntax_checks_passed,pass,true,true,Python compile checks passed for Phase 7A job and API modules.
+api_tests_passed,pass,8,8,Pytest passed with fake SQLite data.
+wsl_limited_demo_export_completed,pass,true,true,WSL limited demo export completed with 100000 rows.
+demo_export_row_count,pass,100000,100000,SQLite scores table contains the limited demo export row count.
+windows_runtime_export_completed,info,false,true,Windows runtime failed at Spark Parquet read; WSL/Linux export succeeded.
+manual_feature_input_prediction_implemented,pass,false,false,Phase 7B is planned but not implemented.
+streamlit_demo_implemented,pass,false,false,Phase 7C is planned but not implemented.
+experiment_tracking_or_tuning_implemented,pass,false,false,Phase 8 is planned but not implemented.
+serving_db_excluded_from_git,pass,true,true,data/serving and SQLite files are ignored.
+no_real_client_ids_committed,pass,true,true,Artifacts and tests do not persist real client ids.
+no_row_level_real_scores_committed,pass,true,true,Artifacts are aggregate-only and do not contain real row-level scores.
