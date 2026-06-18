@@ -59,6 +59,7 @@ The first version stays MVP-focused before adding advanced recommendation, embed
 | ----- | ------ | --------- | ------ | ------------ |
 | Raw inspection / EDA | Done | PySpark, Parquet metadata | Sanitized schema, row count, null, and timestamp artifacts | Confirm data coverage and core entities |
 | Business target selection EDA | Done | PySpark aggregate analysis | Purchase propensity selected with 30-day target window | Confirm target is business-appropriate |
+| Target/problem framing review | Done | Aggregate Parquet EDA | Candidate cohort comparison and target framing decision note | Reframe current target before continuing demo/model work |
 | Preprocessing | Done | PySpark DataFrame transforms | Clean event/product Parquet tables | Review duplicate handling and deferred `page_visit` |
 | Feature engineering | Done | PySpark aggregations and joins | 36 user-level features | Review feature sufficiency and null strategy |
 | Label construction | Done | PySpark time-window joins | Purchase propensity labels and training dataset | Review cutoff/window boundary policy |
@@ -264,7 +265,7 @@ Example format:
 
 | Feature group | Source | Input columns | Output columns | Logic | Reason |
 | ------------- | ------ | ------------- | -------------- | ----- | ------ |
-| TBD | TBD | TBD | TBD | TBD | TBD |
+| Activity counts | Processed event tables | `client_id`, `event_ts`, `sku` | event count and distinct SKU features | Aggregate historical events per client before cutoff | Captures user engagement and purchase/cart intent |
 
 ### 8.3 Modeling Reporting Template
 
@@ -290,15 +291,15 @@ Example format:
 
 | Item | Detail |
 | ---- | ------ |
-| Task | Churn prediction |
-| Label | TBD |
-| Input table | TBD |
-| Features | TBD |
-| Model | TBD |
-| Parameters | TBD |
-| Metrics | TBD |
-| Result | TBD |
-| Fine-tuning options | TBD |
+| Task | Purchase propensity |
+| Label | 1 if an eligible client purchases in the 30-day target window, otherwise 0 |
+| Input table | `data/processed/training/purchase_propensity_30d/` |
+| Features | Numeric user-level behavior features generated before cutoff |
+| Model | Spark ML Logistic Regression |
+| Parameters | Seed, split strategy, imputation strategy, class weighting, max iterations |
+| Metrics | ROC-AUC, PR-AUC, confusion matrix, precision, recall, F1, TopK lift |
+| Result | Baseline ranking and threshold behavior for review |
+| Fine-tuning options | Threshold selection, class weighting review, regularization, time-based backtesting |
 
 ### 8.4 API Reporting Template
 
@@ -747,6 +748,9 @@ Cutoff date:
 Target window:
 30 days, from `2022-11-09` through `2022-12-08`.
 
+Window meaning:
+The feature window and target window have different roles. The feature window contains historical behavior available before the cutoff date, while the target window is the future period used only to create the supervised answer. This setup makes the modeling question explicit: based on past behavior, predict whether an eligible client will buy in the next 30 days.
+
 Boundary rule:
 `event_ts >= cutoff_date and event_ts < date_add(target_end, 1)`.
 
@@ -755,6 +759,9 @@ Eligible cohort:
 
 Label definition:
 Positive label means an eligible client has at least one `product_buy` event in the target window. Negative label means no `product_buy` event in the target window.
+
+Training role:
+The training-ready dataset contains both model inputs and the answer column. During training, the feature columns are used to compute a predicted probability, and `label` is used by the optimizer to measure error and adjust model coefficients. The label is not included inside the feature vector, because that would leak the answer into the input and make evaluation unreliable.
 
 Output label table:
 `data/processed/labels/purchase_propensity_30d/`
@@ -825,6 +832,9 @@ Split result:
 Feature preparation:
 Numeric feature columns are assembled with Spark ML. Non-feature columns such as `client_id`, `label`, target-window metadata, and prediction/model columns are excluded.
 
+Excluded-column rationale:
+The excluded columns are removed only from the model input vector, not from the training process. `label` remains the supervised target used for loss calculation. `client_id` is an identifier rather than behavior. `target_window_start`, `target_window_end`, and `target_event_count` describe the future label-construction window and would create leakage if used as inputs. Spark output columns such as `features`, `rawPrediction`, `probability`, and `prediction` are technical/model-output fields. `class_weight` is derived from the label distribution and is used only as a training weight, not as a behavioral feature.
+
 Imputation strategy:
 Median imputation for 36 numeric model input columns.
 
@@ -840,6 +850,9 @@ Evaluation metrics:
 | --- | ---: |
 | ROC-AUC | 0.840501 |
 | PR-AUC | 0.254436 |
+
+Metric meaning:
+ROC-AUC measures how well the model ranks positive clients above negative clients across possible thresholds. PR-AUC summarizes the precision-recall trade-off across thresholds and is especially important here because the positive class is sparse. Accuracy is not emphasized because a model could look accurate by predicting most clients as negative.
 
 Confusion matrix at threshold `0.5`:
 
@@ -857,6 +870,9 @@ Threshold metrics:
 | Precision | 0.132550 |
 | Recall | 0.725990 |
 | F1 | 0.224171 |
+
+Threshold interpretation:
+The threshold converts a probability score into a binary `prediction_label`. Changing the threshold changes precision, recall, F1, false positives, false negatives, and predicted positive count. It does not retrain the model or change the underlying probability scores.
 
 TopK targeting metrics:
 
@@ -964,6 +980,9 @@ Score distribution:
 | 0.8-0.9 | 54,793 | 0.025488 |
 | 0.9-1.0 | 62,201 | 0.028933 |
 
+Score bucket interpretation:
+The score buckets group continuous `prediction_score` values into reviewable ranges. They help check whether scores are concentrated in one area, support threshold review, and make the scoring output easier to explain without showing row-level user records. If only the threshold changes, these bucket counts usually stay the same because the underlying scores do not change; the binary `prediction_label` counts change instead.
+
 Validation result:
 All scoring validation checks passed. The score output row count equals the eligible cohort count, no duplicate `client_id` values were found, scores are non-null and within `[0, 1]`, prediction labels are binary, model version and score timestamp are populated, and labels or target-window metadata are excluded from the output.
 
@@ -978,6 +997,65 @@ The Phase 6 batch scoring job completed successfully. It generated one score row
 
 Next step:
 The score table has already been used for local API lookup serving. Remaining review points are score refresh cadence, threshold choice, and whether the 500000-row local serving export is sufficient for API/cache testing.
+
+## Target and Feature Assumption Validation
+
+Objective:
+Validate business assumptions behind the current purchase propensity target and feature set before continuing mentor review. This EDA was added after the MVP pipeline was mostly implemented so the target framing, cohort choice, metadata joins, and simple aggregate features could be checked explicitly without changing modeling, scoring, API, or demo logic.
+
+Input tables:
+
+- `data/processed/events/add_to_cart/`
+- `data/processed/events/product_buy/`
+- `data/processed/events/search_query/`
+- `data/processed/product_properties_clean/`
+- `data/processed/features/user_behavior_features/`
+- `data/processed/training/purchase_propensity_30d/`
+- `data/raw/synerise_dataset/product_properties.parquet` for aggregate metadata consistency checks only
+
+Process:
+The targeted EDA computes aggregate-only purchase path, cohort overlap, product metadata consistency, feature-target bucket, and search signal summaries. Local Windows Spark could not read local Parquet because of the known Hadoop/native filesystem issue, so the job completed the same aggregate-only outputs through its PyArrow fallback. No training, scoring, API serving, or demo code was run or changed.
+
+Artifacts:
+
+- `artifacts/target_validation/purchase_path_summary.csv`
+- `artifacts/target_validation/cohort_overlap_summary.csv`
+- `artifacts/target_validation/product_metadata_consistency.csv`
+- `artifacts/target_validation/feature_target_relationship.csv`
+- `artifacts/target_validation/search_signal_summary.csv`
+- `artifacts/target_validation/target_assumption_validation_summary.md`
+
+Key findings:
+
+| Check | Result | Interpretation |
+| --- | ---: | --- |
+| Target-window buyers | 247,660 | All clients with a purchase in the target window, before applying current eligibility |
+| Target-window buyers with add-to-cart before cutoff | 75,415 | 30.451% of target-window buyers had prior cart history |
+| Target-window buyers without add-to-cart before cutoff | 172,245 | Many future buyers would not be represented by a cart-only history assumption |
+| Target purchase events with prior same-SKU add-to-cart | 20,000 of 558,887 | Only 3.579% of target purchase events had same-SKU prior cart history |
+| Current eligible cohort | 2,149,796 | Current cohort is add-to-cart or purchase history before cutoff |
+| Cart conversion cohort | 1,872,709 | Cart-only cohort is smaller than current eligibility |
+| Current cohort extra clients versus cart-only | 277,087 | 12.889% of current cohort comes from purchase-history clients without cart history |
+| Product metadata SKU consistency | 0 unstable SKU rows found | Raw and processed metadata appear one-row-per-SKU for checked `category` and `price` fields |
+| High search segment lift | 3.245686 | Search count has aggregate lift, but should still be treated as a simple reviewed signal |
+
+Feature-target relationship:
+Bucketed feature checks show directional associations with the target, not causality. Higher add-to-cart, prior purchase, active-day, recency, and ratio buckets generally have higher positive rates than the baseline positive rate of 0.043546. For example, `add_to_cart_count > 50` has lift 9.761413, `product_buy_count > 50` has lift 14.398359, and `active_days_count > 50` has lift 14.663125. These results support keeping simple aggregate features for the MVP baseline while leaving richer sequence features for a later iteration.
+
+Implications for target naming:
+The current target remains valid because purchases do not consistently require prior add-to-cart behavior, and the current cohort includes a meaningful group beyond cart-only eligibility. However, it should not be described as broad all-active-user purchase propensity. For mentor review, the most precise name is `30-day purchase prediction for prior cart/purchase users`: clients are eligible if they had add-to-cart or purchase activity before cutoff, and the label asks whether they purchase in the next 30 days.
+
+Limitations:
+This EDA is observational and aggregate-only. It does not prove causality, does not retrain the model, does not evaluate a new threshold, and does not test page-visit features. Search query text is intentionally excluded, so search quality is evaluated only through aggregate counts and distinct-day style features.
+
+Next decision for mentor review:
+Keep the current target for the MVP, but rename/reframe it as `30-day purchase prediction for prior cart/purchase users`. Recommended future work is to compare cart conversion as a separate target, broaden eligibility with search/cart/buy activity in a new iteration, evaluate page visits through dedicated EDA before use, and add sequence-based cart-to-purchase features later.
+
+Detailed problem framing review:
+`docs/target_problem_framing_review.md`
+
+Additional candidate framing EDA:
+The follow-up problem-framing EDA compared current, cart-only, search/cart/buy, buy-only, search-only diagnostic, and page-visit all-active candidate cohorts. The current cohort has 2,149,796 clients and positive rate 0.043546. Cart-only has 1,872,709 clients and positive rate 0.040271. Search/cart/buy has 2,796,833 clients and positive rate 0.035199, adding 647,037 clients beyond the current cohort. Search-only has 647,037 clients and positive rate 0.007466, which supports treating search broadening as a next iteration rather than changing the current MVP. Page-visit all-active framing remains deferred because raw EDA shows 199,451,980 page-visit rows and 20,927,946 distinct clients, requiring a separate cost/benefit EDA before inclusion.
 
 ## API Serving Milestone Summary
 

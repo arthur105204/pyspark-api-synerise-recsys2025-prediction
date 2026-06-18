@@ -163,6 +163,90 @@ artifacts/eda/target_feasibility_notes.md
 
 Before moving to preprocessing, review the recommended MVP target, target window, eligible cohort definition, positive rate, repeat-purchase behavior, and leakage rules.
 
+## `01c_validate_target_and_feature_assumptions.py`
+
+This job runs targeted aggregate-only EDA to validate business assumptions behind the current purchase propensity MVP.
+
+It checks:
+
+- whether target-window purchases usually have prior add-to-cart history
+- how the current active cohort differs from a cart-only conversion cohort
+- whether product metadata is stable at SKU level
+- whether selected count, recency, and ratio features show directional relationship with the target
+- whether search count has useful aggregate signal or appears noisy
+
+It does not modify preprocessing, modeling, batch scoring, API, or demo logic. It does not train models, rescore users, write raw client IDs, write raw query text, write product names, or output row-level examples.
+
+### How to Run
+
+```powershell
+python jobs/01c_validate_target_and_feature_assumptions.py
+```
+
+The default `--engine auto` tries Spark first. On local Windows environments where Spark cannot read local Parquet because of Hadoop native filesystem issues, the job falls back to PyArrow for the same aggregate-only EDA outputs.
+
+Explicit engine options:
+
+```powershell
+python jobs/01c_validate_target_and_feature_assumptions.py --engine spark
+python jobs/01c_validate_target_and_feature_assumptions.py --engine pyarrow
+```
+
+### Target Validation Outputs
+
+The job writes:
+
+```text
+artifacts/target_validation/purchase_path_summary.csv
+artifacts/target_validation/cohort_overlap_summary.csv
+artifacts/target_validation/product_metadata_consistency.csv
+artifacts/target_validation/feature_target_relationship.csv
+artifacts/target_validation/search_signal_summary.csv
+artifacts/target_validation/target_assumption_validation_summary.md
+```
+
+Before continuing modeling/API/demo review, review whether the current target should remain loosely framed as purchase propensity or be described more precisely as 30-day purchase prediction for prior cart/purchase users.
+
+## `01d_compare_candidate_problem_framings.py`
+
+This job compares candidate MVP problem framings with aggregate-only EDA.
+
+It compares:
+
+- current prior cart/purchase cohort
+- cart-only conversion cohort
+- search/cart/buy active-user cohort
+- buy-only repeat-purchase cohort
+- search-only diagnostic cohort
+- all-active page-visit framing as a documented future extension
+
+It does not change the target, modify modeling code, train models, rerun batch scoring, change API behavior, write raw client IDs, write raw query text, write product names, or output row-level examples.
+
+### How to Run
+
+```powershell
+python jobs/01d_compare_candidate_problem_framings.py
+```
+
+### Problem Framing Outputs
+
+The job writes:
+
+```text
+artifacts/problem_framing/candidate_cohort_comparison.csv
+artifacts/problem_framing/candidate_target_balance.csv
+artifacts/problem_framing/candidate_overlap_matrix.csv
+artifacts/problem_framing/candidate_feature_availability.csv
+artifacts/problem_framing/candidate_processing_cost_estimate.csv
+artifacts/problem_framing/problem_framing_recommendation.md
+```
+
+The current recommendation is to keep the implemented MVP target but rename/reframe it as:
+
+```text
+30-day purchase prediction for prior cart/purchase users
+```
+
 ## `02_preprocess_events.py`
 
 This job runs Phase 2 preprocessing for the purchase propensity MVP direction.
@@ -471,6 +555,549 @@ This job does not create API serving code, production batch scoring outputs, row
 ### Baseline Modeling Runtime Note
 
 The modeling job uses Spark to read the Phase 4 training Parquet dataset and Spark ML to write the model. On Windows local Spark, reading or writing local Parquet/model directories may require a proper Hadoop/winutils setup. If local Windows Spark fails, run the job in WSL/Linux or configure Hadoop properly.
+
+## `05b_threshold_analysis.py`
+
+This E2 job evaluates threshold decision policies for the existing temporal baseline model.
+
+Inputs:
+
+- `data/models/purchase_propensity_baseline_temporal/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+- `artifacts/modeling/e1_temporal_validation/topk_metrics.csv`
+
+It loads the trained Spark ML model, scores the temporal validation snapshot in memory, computes aggregate threshold metrics for thresholds `0.01` through `0.99`, compares fixed-threshold policies with TopK policies, and writes sanitized aggregate-only artifacts.
+
+### How to Run
+
+```bash
+python jobs/05b_threshold_analysis.py
+```
+
+Optional explicit paths:
+
+```bash
+python jobs/05b_threshold_analysis.py --model-input data/models/purchase_propensity_baseline_temporal --validation-input data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d --artifact-dir artifacts/modeling/e1_temporal_validation
+```
+
+Outputs:
+
+```text
+artifacts/modeling/e1_temporal_validation/threshold_metrics.csv
+artifacts/modeling/e1_temporal_validation/threshold_summary.json
+artifacts/modeling/e1_temporal_validation/threshold_review.md
+```
+
+This job does not retrain the model, modify features, tune hyperparameters, persist row-level predictions, write raw client IDs, write raw query text, or write product names.
+
+## `05c_calibration_analysis.py`
+
+This E3 job evaluates whether the existing temporal baseline model scores can be interpreted as probabilities or should be treated mainly as ranking scores.
+
+Inputs:
+
+- `data/models/purchase_propensity_baseline_temporal/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+
+It loads the trained Spark ML model, scores the temporal validation snapshot in memory, creates 10 equal-width score buckets, computes aggregate calibration gaps, and writes sanitized aggregate-only artifacts.
+
+### How to Run
+
+```bash
+python jobs/05c_calibration_analysis.py
+```
+
+Optional explicit paths:
+
+```bash
+python jobs/05c_calibration_analysis.py --model-input data/models/purchase_propensity_baseline_temporal --validation-input data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d --artifact-dir artifacts/modeling/e3_calibration
+```
+
+Outputs:
+
+```text
+artifacts/modeling/e3_calibration/calibration_curve.csv
+artifacts/modeling/e3_calibration/calibration_summary.json
+artifacts/modeling/e3_calibration/calibration_review.md
+```
+
+This job does not retrain the model, fit a calibration model, modify features, change labels, change thresholds, persist row-level predictions, write raw client IDs, write raw query text, or write product names.
+
+## `05d_feature_ablation.py`
+
+This E4 job measures feature-family contribution using temporal validation.
+
+Inputs:
+
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+
+It trains one Logistic Regression model per ablation, each time removing one existing feature family, then evaluates ROC-AUC, PR-AUC, and TopK precision/lift on the E1 temporal validation snapshot.
+
+Feature families:
+
+- add-to-cart activity
+- product-buy activity
+- remove-from-cart activity
+- search activity
+- recency features
+- ratio features
+- product metadata features
+- cohort indicator
+- overall activity (`active_days_count`)
+
+### How to Run
+
+```bash
+python jobs/05d_feature_ablation.py
+```
+
+Optional explicit paths:
+
+```bash
+python jobs/05d_feature_ablation.py --train-input data/processed/training/e1_train_2022_10_10/purchase_propensity_30d --validation-input data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d --artifact-dir artifacts/modeling/e4_feature_ablation
+```
+
+Outputs:
+
+```text
+artifacts/modeling/e4_feature_ablation/feature_ablation_results.csv
+artifacts/modeling/e4_feature_ablation/feature_ablation_summary.json
+artifacts/modeling/e4_feature_ablation/feature_ablation_review.md
+```
+
+This job does not add features, change labels, change cohorts, tune hyperparameters, calibrate scores, benchmark new model classes, persist row-level predictions, write raw client IDs, write raw query text, write product names, or write model binaries.
+
+## `05e_feature_redundancy_followup.py`
+
+This E4 follow-up job investigates whether `active_days_count` absorbs signal from cart, buy, search, and recency features.
+
+Inputs:
+
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+
+It runs the same class-weighted Logistic Regression setup as E1/E4 for combined ablations:
+
+- baseline
+- remove overall activity
+- remove overall activity plus add-to-cart activity
+- remove overall activity plus product-buy activity
+- remove overall activity plus add-to-cart and product-buy activity
+- remove overall activity plus recency features
+- remove overall activity plus recency, add-to-cart, and product-buy activity
+
+It also computes an aggregate feature redundancy audit by family, including pairwise correlation where feasible, correlation with `active_days_count`, null rates, and variance statistics.
+
+### How to Run
+
+```bash
+python jobs/05e_feature_redundancy_followup.py
+```
+
+Outputs:
+
+```text
+artifacts/modeling/e4_feature_ablation_followup/combined_ablation_results.csv
+artifacts/modeling/e4_feature_ablation_followup/feature_redundancy_audit.csv
+artifacts/modeling/e4_feature_ablation_followup/combined_ablation_review.md
+```
+
+This job does not add features, change labels, change cohorts, tune hyperparameters, calibrate scores, benchmark new model classes, persist row-level predictions, write raw client IDs, write raw query text, write product names, or write model binaries.
+
+## `05f_feature_rationalization_audit.py`
+
+This audit combines E4 ablation evidence with variance, constant-feature detection, correlation structure, and business meaning before any E5 feature expansion.
+
+Inputs:
+
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `artifacts/modeling/e4_feature_ablation/feature_ablation_summary.json`
+
+It detects zero-variance features, skips unsafe correlations involving constant features, computes a feature redundancy matrix, and classifies each feature family into exactly one rationalization category:
+
+- `KEEP_CORE`
+- `KEEP_SUPPORTING`
+- `REVIEW_REDUNDANCY`
+- `REMOVE_CONSTANT`
+- `REMOVE_CANDIDATE`
+
+### How to Run
+
+```bash
+python jobs/05f_feature_rationalization_audit.py
+```
+
+Outputs:
+
+```text
+artifacts/modeling/feature_rationalization/feature_variance_audit.csv
+artifacts/modeling/feature_rationalization/feature_redundancy_matrix.csv
+artifacts/modeling/feature_rationalization/feature_decision_matrix.csv
+artifacts/modeling/feature_rationalization/feature_rationalization_review.md
+```
+
+This job does not retrain a model, add features, change labels, change cohorts, calibrate scores, persist row-level predictions, write raw client IDs, write raw query text, write product names, or write model binaries.
+
+## `05g_train_baseline_v21.py`
+
+This job trains the first experimental Baseline v2 model, Baseline V2-1.
+
+Inputs:
+
+- `configs/baseline_v21_features.json`
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+
+V2-1 removes only high-confidence defective features:
+
+- `is_eligible_purchase_propensity`
+- `buy_to_cart_ratio`
+- `remove_to_cart_ratio`
+- `cart_minus_remove_count`
+- `search_to_cart_ratio`
+
+It keeps the same temporal split, Logistic Regression model class, class weighting, median imputation, and TopK evaluation pattern as E1. It does not remove rolling-window features in V2-1; it only writes a rolling-window review artifact.
+
+### How to Run
+
+```bash
+python jobs/05g_train_baseline_v21.py
+```
+
+Outputs:
+
+```text
+data/models/purchase_propensity_baseline_v21/
+artifacts/modeling/baseline_v2/v21_window_review.csv
+artifacts/modeling/baseline_v2/v21_evaluation.md
+```
+
+This job does not add new engineered features, redesign feature families, modify labels, modify temporal splits, tune hyperparameters, calibrate scores, overwrite E1 artifacts, persist row-level predictions, write raw client IDs, write raw query text, or write product names.
+
+## `05h_train_baseline_v22.py`
+
+This job trains Baseline V2-2, a rolling-window reduction experiment built on top of Baseline V2-1.
+
+Inputs:
+
+- `configs/baseline_v22_features.json`
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+
+V2-2 keeps the same temporal split, Logistic Regression model class, class weighting, median imputation, and TopK evaluation pattern as E1/V2-1. It removes the V2-1 high-confidence defective features and the standalone 60-day rolling count features:
+
+- `add_to_cart_count_60d`
+- `product_buy_count_60d`
+- `remove_from_cart_count_60d`
+- `search_query_count_60d`
+
+It keeps total count, 30-day count, and 90-day count features for this isolated experiment. It does not add trend features, transition features, cadence features, sequence features, ratio features, search redesign, purchase redesign, remove-from-cart redesign, new labels, new temporal splits, calibration, hyperparameter tuning, or a new model class.
+
+### How to Run
+
+```bash
+python jobs/05h_train_baseline_v22.py
+```
+
+Outputs:
+
+```text
+data/models/purchase_propensity_baseline_v22/
+artifacts/modeling/baseline_v2/v22_window_selection_review.csv
+artifacts/modeling/baseline_v2/v22_window_selection_review.md
+artifacts/modeling/baseline_v2/v22_summary.json
+artifacts/modeling/baseline_v2/v22_evaluation.md
+```
+
+This job does not overwrite E1 or V2-1 artifacts, persist row-level predictions, write raw client IDs, write raw query text, write product names, or write row-level examples.
+
+## `05i_train_baseline_v23a.py`
+
+This job trains Baseline V2-3a, a search quick-win redesign experiment built on top of Baseline V2-2.
+
+Inputs:
+
+- `configs/baseline_v23a_features.json`
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+
+V2-3a keeps the same temporal split, Logistic Regression model class, class weighting, median imputation, and TopK evaluation pattern as E1/V2-1/V2-2. It replaces the remaining raw search count/day/recency representation with three quick-win features:
+
+- `search_count_bucket`
+- `search_recency_bucket`
+- `recent_search_flag`
+
+It does not add search-to-cart transition features, normalized search intensity, trend features, session features, query semantics, query embeddings, category transitions, new labels, new temporal splits, calibration, hyperparameter tuning, or a new model class.
+
+### How to Run
+
+```bash
+python jobs/05i_train_baseline_v23a.py
+```
+
+Outputs:
+
+```text
+data/models/purchase_propensity_baseline_v23a/
+artifacts/modeling/baseline_v2/v23a_search_feature_review.md
+artifacts/modeling/baseline_v2/v23a_feature_definitions.md
+artifacts/modeling/baseline_v2/v23a_summary.json
+artifacts/modeling/baseline_v2/v23a_evaluation.md
+```
+
+This job does not overwrite previous baselines, persist row-level predictions, write raw client IDs, write raw query text, write product names, or write row-level examples.
+
+## `05j_train_baseline_v23b.py`
+
+This job trains Baseline V2-3b, a minimal search-to-cart transition experiment built on top of Baseline V2-2.
+
+Inputs:
+
+- `configs/baseline_v23b_features.json`
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+- `data/processed/events/search_query/`
+- `data/processed/events/add_to_cart/`
+
+V2-3b keeps the same temporal split, Logistic Regression model class, class weighting, median imputation, and TopK evaluation pattern as E1/V2-1/V2-2. It keeps V2-2 raw search features and adds only:
+
+- `search_before_cart_count`
+- `search_to_cart_rate`
+- `recent_search_then_cart_flag`
+
+It does not add raw query text features, query embeddings, session features, trend features, category transitions, new labels, new temporal splits, calibration, hyperparameter tuning, or a new model class.
+
+### How to Run
+
+```bash
+python jobs/05j_train_baseline_v23b.py
+```
+
+Outputs:
+
+```text
+data/models/purchase_propensity_baseline_v23b/
+artifacts/modeling/baseline_v2/v23b_feature_definitions.md
+artifacts/modeling/baseline_v2/v23b_transition_feature_distribution.csv
+artifacts/modeling/baseline_v2/v23b_transition_positive_rate.csv
+artifacts/modeling/baseline_v2/v23b_transition_coefficients.csv
+artifacts/modeling/baseline_v2/v23b_summary.json
+artifacts/modeling/baseline_v2/v23b_evaluation.md
+```
+
+This job does not overwrite previous baselines, persist row-level predictions, write raw client IDs, write raw query text, write product names, row-level transitions, or row-level examples.
+
+## `05k_train_baseline_v23c.py`
+
+This job trains Baseline V2-3c, a transition feature pruning experiment built on top of Baseline V2-2.
+
+Inputs:
+
+- `configs/baseline_v23c_features.json`
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+- `data/processed/events/search_query/`
+- `data/processed/events/add_to_cart/`
+
+V2-3c keeps the same temporal split, Logistic Regression model class, class weighting, median imputation, and TopK evaluation pattern as E1/V2-1/V2-2. It adds only:
+
+- `recent_search_then_cart_flag`
+
+It intentionally excludes the other V2-3b transition features:
+
+- `search_before_cart_count`
+- `search_to_cart_rate`
+
+### How to Run
+
+```bash
+python jobs/05k_train_baseline_v23c.py
+```
+
+Outputs:
+
+```text
+data/models/purchase_propensity_baseline_v23c/
+artifacts/modeling/baseline_v2/v23c_feature_selection.md
+artifacts/modeling/baseline_v2/v23c_feature_definition.md
+artifacts/modeling/baseline_v2/v23c_feature_distribution.csv
+artifacts/modeling/baseline_v2/v23c_positive_rate.csv
+artifacts/modeling/baseline_v2/v23c_coefficient.csv
+artifacts/modeling/baseline_v2/v23c_summary.json
+artifacts/modeling/baseline_v2/v23c_evaluation.md
+```
+
+This job does not overwrite previous baselines, persist row-level predictions, write raw client IDs, write raw query text, write product names, row-level transitions, or row-level examples.
+
+## `05l_train_e6_velocity.py`
+
+This E6 job runs an additive trend/velocity feature experiment on top of the frozen Baseline V2-2 feature set.
+
+Inputs:
+
+- `configs/e6_velocity_features.json`
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+- processed event tables under `data/processed/events/`
+
+E6 adds only derived velocity features:
+
+- `cart_velocity_30d_vs_90d`
+- `cart_delta_30d_90d`
+- `buy_velocity_30d_vs_90d`
+- `buy_delta_30d_90d`
+- `search_velocity_30d_vs_90d`
+- `activity_intensity_ratio`
+
+It does not modify V2-2 features, labels, temporal splits, preprocessing outputs, production models, model architecture, sequence features, graph features, search-to-cart transitions, query text features, or embeddings.
+
+### How to Run
+
+```bash
+python jobs/05l_train_e6_velocity.py
+```
+
+Outputs:
+
+```text
+data/models/purchase_propensity_e6_velocity/
+artifacts/modeling/e6_trend_velocity/E6_feature_definitions.md
+artifacts/modeling/e6_trend_velocity/e6_feature_distribution.csv
+artifacts/modeling/e6_trend_velocity/e6_model_evaluation.md
+artifacts/modeling/e6_trend_velocity/e6_ablation_analysis.md
+artifacts/modeling/e6_trend_velocity/e6_ablation_results.csv
+artifacts/modeling/e6_trend_velocity/e6_summary.json
+```
+
+Adoption requires PR-AUC improvement of at least 0.5% or Lift@5% improvement of at least 0.5% versus V2-2. Otherwise, E6 remains investigational.
+
+## `05m_e6_pruning.py`
+
+This E6.1 job prunes the E6 trend/velocity feature set to identify the smallest useful subset.
+
+Inputs:
+
+- `configs/e6_velocity_features.json`
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+- processed event tables under `data/processed/events/`
+
+The job keeps Baseline V2-2 features unchanged and compares only predefined E6 feature subsets:
+
+- full E6
+- E6 without `activity_intensity_ratio`
+- E6 without search velocity
+- buy plus cart velocity only
+- buy velocity only
+
+It does not create new features, modify V2-2 features, change labels, change temporal splits, tune thresholds, calibrate scores, change the model class, or persist row-level predictions.
+
+### How to Run
+
+```bash
+python jobs/05m_e6_pruning.py
+```
+
+Outputs:
+
+```text
+artifacts/modeling/e6_trend_velocity/e6_pruning_evaluation.md
+artifacts/modeling/e6_trend_velocity/e6_feature_ablation_summary.csv
+artifacts/modeling/e6_trend_velocity/e6_pruning_summary.json
+```
+
+The decision rule keeps only E6 features that contribute at least 0.2% PR-AUC or improve Lift@5%, with preference for the simplest model that preserves TopK gain.
+
+## `05n_train_baseline_v24.py`
+
+This job trains Baseline V2-4, a consolidated model candidate using the frozen Baseline V2-2 feature set plus the selected E6.1 velocity features.
+
+Inputs:
+
+- `configs/baseline_v24_features.json`
+- `artifacts/modeling/e6_trend_velocity/e6_summary.json`
+- `data/processed/training/e1_train_2022_10_10/purchase_propensity_30d/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+- processed event tables under `data/processed/events/`
+
+V2-4 adds only:
+
+- `cart_velocity_30d_vs_90d`
+- `cart_delta_30d_90d`
+- `buy_velocity_30d_vs_90d`
+- `buy_delta_30d_90d`
+- `search_velocity_30d_vs_90d`
+
+It excludes the noisy E6 feature:
+
+- `activity_intensity_ratio`
+
+The job compares:
+
+- Baseline V2-2
+- V2-2 plus full E6
+- V2-4, using the E6.1 pruned feature set
+
+It keeps the same temporal split, Logistic Regression model class, class weighting, median imputation, and TopK evaluation pattern as V2-2/E6. It does not modify V2-2 features, add new features beyond E6.1, change labels, change temporal splits, tune thresholds, calibrate scores, add sequence/graph features, or persist row-level predictions.
+
+### How to Run
+
+```bash
+python jobs/05n_train_baseline_v24.py
+```
+
+Outputs:
+
+```text
+data/models/purchase_propensity_baseline_v24/
+artifacts/modeling/baseline_v2/v24_consolidation_evaluation.md
+artifacts/modeling/baseline_v2/v24_feature_comparison.csv
+artifacts/modeling/baseline_v2/v24_ablation_summary.md
+artifacts/modeling/baseline_v2/v24_summary.json
+```
+
+If V2-4 improves PR-AUC or Lift@5 versus V2-2, it is marked as a candidate for production merge. The final production merge should still be reviewed before serving export or API changes.
+
+## `05o_e9_final_benchmark.py`
+
+This E9 job performs the final model selection benchmark between the frozen V2-2 baseline and the V2-4 candidate model.
+
+Inputs:
+
+- `configs/baseline_v24_features.json`
+- `data/models/purchase_propensity_baseline_v22/`
+- `data/models/purchase_propensity_baseline_v24/`
+- `data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d/`
+- processed event tables under `data/processed/events/`
+
+The job loads existing trained Spark ML models and scores the temporal validation snapshot in memory. It computes:
+
+- ROC-AUC and PR-AUC
+- Precision@1%, Precision@5%, Precision@10%
+- Lift@1%, Lift@5%, Lift@10%
+- segment metrics for high/low activity users and new/returning users
+- TopK overlap between V2-2 and V2-4
+- aggregate score distribution summaries
+
+It does not retrain models, change features, change preprocessing, change labels, tune thresholds, calibrate scores, change model architecture, persist row-level predictions, or write raw client IDs.
+
+### How to Run
+
+```bash
+python jobs/05o_e9_final_benchmark.py
+```
+
+Outputs:
+
+```text
+artifacts/modeling/baseline_v2/v2_e9_final_benchmark_report.md
+artifacts/modeling/baseline_v2/v2_e9_segment_analysis.csv
+artifacts/modeling/baseline_v2/v2_e9_topk_overlap_analysis.csv
+artifacts/modeling/baseline_v2/v2_e9_score_distribution_summary.json
+```
+
+The final report recommends `PROMOTE V2-4` or `KEEP V2-2` based only on PR-AUC, Lift@5, and segment stability.
 
 ## `06_batch_score.py`
 

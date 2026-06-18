@@ -32,6 +32,8 @@
 | Metadata privacy | Done | Sanitized metadata contains no absolute local paths or row-level samples |
 | EDA | Completed | Full-count EDA artifacts generated and refined for readability |
 | Business target selection EDA | Completed | Purchase propensity selected as provisional MVP target |
+| Target and feature assumption validation EDA | Completed pending review | Aggregate-only validation artifacts generated under `artifacts/target_validation/`; current target remains valid but should be precisely scoped to prior cart/purchase users |
+| Target/problem framing review | Completed pending review | Candidate problem definitions compared; recommendation is to keep current target but rename/reframe as 30-day purchase prediction for prior cart/purchase users |
 | Preprocessing | Completed pending review | Spark preprocessing outputs and sanitized validation artifacts generated |
 | Feature engineering | Completed pending review | User-level feature table and sanitized feature artifacts generated |
 | Label construction | Completed pending review | Spark label and training outputs generated with sanitized validation artifacts |
@@ -203,6 +205,97 @@ Review checklist:
 
 Status:
 Completed pending review. Business target selection EDA recommends purchase propensity as the provisional MVP target with a 30-day target window, pending preprocessing validation.
+
+### Phase 1.2: Target and Feature Assumption Validation EDA
+
+Goal:
+Validate business assumptions behind the current target and feature set before continuing mentor review.
+
+Guardrails:
+
+- Do not modify preprocessing, modeling, batch scoring, API, or demo logic.
+- Do not train or rescore models.
+- Use processed tables where available.
+- Keep artifacts aggregate-only and sanitized.
+- Do not persist raw `client_id` values, raw query text, product names, row-level examples, or row-level predictions.
+- Avoid large `collect()` calls; collect only small aggregate outputs.
+
+Generated artifacts:
+
+- `artifacts/target_validation/purchase_path_summary.csv`
+- `artifacts/target_validation/cohort_overlap_summary.csv`
+- `artifacts/target_validation/product_metadata_consistency.csv`
+- `artifacts/target_validation/feature_target_relationship.csv`
+- `artifacts/target_validation/search_signal_summary.csv`
+- `artifacts/target_validation/target_assumption_validation_summary.md`
+
+Verification/Test Steps:
+
+- Check whether target-window buyers and purchase events have prior add-to-cart history.
+- Compare current `add_to_cart OR product_buy` eligibility with a cart-only conversion cohort.
+- Check raw and processed product metadata SKU stability.
+- Bucket selected count, recency, and ratio features against the target label.
+- Check aggregate search-count signal without outputting query text.
+- Confirm artifacts contain no raw row-level data.
+
+Definition of Done:
+
+- EDA job exists as `jobs/01c_validate_target_and_feature_assumptions.py`.
+- Target validation artifacts are generated.
+- Report includes key findings and mentor review implications.
+- No modeling/API/demo logic is changed.
+
+Review Questions:
+
+- Should the target remain named purchase propensity, or be reframed as active-client purchase propensity?
+- Is cart conversion still a separate future target worth comparing?
+- Should search-only users be considered in a broader future cohort?
+- Should sequence-based cart-to-purchase features be added in a later iteration?
+
+Status:
+Completed pending review. The EDA shows target-window purchases do not require prior cart history, the current cohort includes 277,087 clients beyond cart-only eligibility, processed product metadata is SKU-stable, aggregate features show directional relationships with the target, and search count has lift but should remain a reviewed aggregate signal rather than a strong intent claim.
+
+### Phase 1.3: Target and Problem Framing Review
+
+Goal:
+Decide whether the implemented MVP target should be kept, renamed/reframed, broadened, or replaced before continuing mentor review.
+
+Guardrails:
+
+- Do not modify preprocessing, modeling, batch scoring, API, demo, or load test logic.
+- Do not train or rescore models.
+- Do not change the target implementation immediately.
+- Use aggregate-only artifacts.
+- Do not persist raw `client_id` values, raw query text, product names, row-level examples, or row-level predictions.
+
+Generated artifacts:
+
+- `artifacts/problem_framing/candidate_cohort_comparison.csv`
+- `artifacts/problem_framing/candidate_target_balance.csv`
+- `artifacts/problem_framing/candidate_overlap_matrix.csv`
+- `artifacts/problem_framing/candidate_feature_availability.csv`
+- `artifacts/problem_framing/candidate_processing_cost_estimate.csv`
+- `artifacts/problem_framing/problem_framing_recommendation.md`
+
+Generated documentation:
+
+- `docs/target_problem_framing_review.md`
+
+Definition of Done:
+
+- Candidate problem definitions are compared.
+- Cohort size, positive count, positive rate, and coverage trade-offs are documented where feasible.
+- `page_visit` all-active framing is documented as a future high-cost extension rather than forced into the current MVP.
+- Final recommendation is clear and evidence-based.
+
+Review Questions:
+
+- Should mentor-facing language use `30-day purchase prediction for prior cart/purchase users`?
+- Should search/cart/buy active-user purchase propensity become the next iteration?
+- Should cart conversion and repeat purchase be retained as separate future targets?
+
+Status:
+Completed pending review. Recommendation: keep the current MVP target, but rename/reframe it as `30-day purchase prediction for prior cart/purchase users`. Search/cart/buy broadening, cart conversion, repeat purchase, all-active page-visit propensity, and next-product/category ranking remain future extensions.
 
 ### Phase 2: Preprocessing
 
@@ -718,8 +811,9 @@ Not started.
 
 ## 4. Immediate Next Actions
 
-1. Review lookup and manual prediction API behavior.
-3. Decide whether the demo UI should use Streamlit or a lightweight frontend.
+1. Review `docs/target_problem_framing_review.md` with the mentor.
+2. Decide whether to adopt `30-day purchase prediction for prior cart/purchase users` as the mentor-facing MVP target name.
+3. Keep modeling, API, demo, training, and scoring changes paused until the review decision is made.
 4. Keep Phase 8 offline tuning separate from API/demo implementation.
 
 ## 5. Agent Instruction Setup
@@ -763,3 +857,5 @@ Before every commit:
 | 2026-06-11 | Phase 1.1 | Completed pending review | Business target selection EDA generated aggregate-only comparison artifacts |
 | 2026-06-12 | Phase 2 | Completed | Preprocessing pipeline generated local processed tables and sanitized validation artifacts |
 | 2026-06-12 | Phase 3 | Completed pending review | Feature engineering generated user-level features and sanitized validation artifacts |
+| 2026-06-14 | Phase 1.2 | Completed pending review | Target and feature assumption validation EDA generated aggregate-only artifacts |
+| 2026-06-14 | Phase 1.3 | Completed pending review | Target/problem framing review recommends keeping current target but renaming/reframing it |
