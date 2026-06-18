@@ -1,0 +1,1505 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PySpark 30-Day Purchase Prediction & API Serving</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --panel-soft: #f0f4f8;
+      --ink: #1f2933;
+      --muted: #627083;
+      --line: #d8dee8;
+      --accent: #2563eb;
+      --accent-2: #0f766e;
+      --accent-3: #b45309;
+      --danger: #b42318;
+      --good: #087443;
+      --shadow: 0 14px 35px rgba(31, 41, 51, 0.08);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.55;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      min-height: 88vh;
+      display: grid;
+      align-items: center;
+      background:
+        linear-gradient(120deg, rgba(11, 18, 32, 0.88), rgba(15, 23, 42, 0.72)),
+        radial-gradient(circle at 70% 30%, rgba(37, 99, 235, 0.45), transparent 34%),
+        linear-gradient(135deg, #111827, #1f2937 42%, #0f766e);
+      color: white;
+      padding: 48px 0 38px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 70px;
+      background: linear-gradient(to bottom, transparent, var(--bg));
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
+      gap: 34px;
+      align-items: end;
+      position: relative;
+      z-index: 1;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: #bfdbfe;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 860px;
+      font-size: clamp(2.35rem, 5vw, 5.35rem);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      margin: 22px 0 0;
+      color: #dbeafe;
+      font-size: clamp(1.05rem, 1.8vw, 1.36rem);
+    }
+
+    .hero-facts {
+      display: grid;
+      gap: 10px;
+      margin-top: 28px;
+      max-width: 780px;
+    }
+
+    .fact {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      color: #f8fafc;
+    }
+
+    .fact span:first-child {
+      color: #93c5fd;
+      font-weight: 800;
+      min-width: 112px;
+    }
+
+    .hero-panel {
+      background: rgba(255, 255, 255, 0.11);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius);
+      padding: 18px;
+      backdrop-filter: blur(10px);
+    }
+
+    .mini-flow {
+      display: grid;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    .mini-flow div {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #eff6ff;
+      font-weight: 700;
+      font-size: 0.94rem;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.92);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-inner {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      overflow-x: auto;
+      padding: 10px 0;
+    }
+
+    .nav a {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      color: #334155;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .nav a:hover {
+      background: var(--panel-soft);
+      text-decoration: none;
+    }
+
+    section {
+      padding: 64px 0;
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(280px, 0.45fr);
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 24px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(1.75rem, 3vw, 2.65rem);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .section-head p,
+    .lead {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid.four {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .card,
+    .phase-card,
+    .metric-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .card {
+      padding: 18px;
+    }
+
+    .card h3,
+    .metric-card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      color: #334155;
+      padding: 4px 9px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge.good {
+      color: var(--good);
+      background: #ecfdf3;
+      border-color: #abefc6;
+    }
+
+    .badge.warn {
+      color: var(--accent-3);
+      background: #fffaeb;
+      border-color: #fedf89;
+    }
+
+    .badge.blue {
+      color: var(--accent);
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .framing-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .soft-panel {
+      background: #eef4ff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius);
+      padding: 16px;
+      color: #1e3a8a;
+    }
+
+    .toggle {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--ink);
+      border-radius: var(--radius);
+      padding: 13px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 0.98rem;
+      text-align: left;
+    }
+
+    .toggle:hover,
+    .toggle[aria-expanded="true"] {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
+
+    .toggle .chev {
+      flex: 0 0 auto;
+      font-size: 1.1rem;
+    }
+
+    .collapse {
+      display: none;
+      padding: 14px 4px 0;
+      color: var(--muted);
+    }
+
+    .collapse.open {
+      display: block;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      font-size: 0.92rem;
+    }
+
+    .data-table th,
+    .data-table td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: #f8fafc;
+      color: #334155;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: var(--radius);
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric-card {
+      padding: 16px;
+      min-height: 120px;
+    }
+
+    .metric-value {
+      font-size: 1.65rem;
+      line-height: 1;
+      font-weight: 900;
+      color: #0f172a;
+      margin: 8px 0;
+      overflow-wrap: anywhere;
+    }
+
+    .metric-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .bar-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 160px minmax(120px, 1fr) 86px;
+      gap: 12px;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: var(--w);
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .phase-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .phase-card summary {
+      width: 100%;
+      cursor: pointer;
+      padding: 16px;
+      color: var(--ink);
+      list-style: none;
+    }
+
+    .phase-card summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .phase-card summary:hover {
+      background: #f8fafc;
+    }
+
+    .phase-num {
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 900;
+    }
+
+    .phase-title {
+      display: block;
+      margin-top: 6px;
+      font-weight: 900;
+      font-size: 1rem;
+    }
+
+    .phase-status {
+      display: inline-flex;
+      margin-top: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #abefc6;
+      background: #ecfdf3;
+      color: var(--good);
+      font-size: 0.75rem;
+      font-weight: 900;
+    }
+
+    .phase-status.planned {
+      border-color: #fedf89;
+      background: #fffaeb;
+      color: var(--accent-3);
+    }
+
+    .phase-why {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.89rem;
+    }
+
+    .phase-detail {
+      display: none;
+      border-top: 1px solid var(--line);
+      padding: 14px 16px 16px;
+      background: #fbfdff;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .phase-card[open] .phase-detail {
+      display: block;
+    }
+
+    .phase-detail dl {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+    }
+
+    .phase-detail dt {
+      color: #334155;
+      font-weight: 900;
+    }
+
+    .phase-detail dd {
+      margin: 0;
+    }
+
+    .diagram {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .diagram .node {
+      padding: 14px;
+      border-radius: var(--radius);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      min-height: 128px;
+      box-shadow: var(--shadow);
+    }
+
+    .diagram .node strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .diagram .node p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tab-button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: #334155;
+      font-weight: 800;
+    }
+
+    .tab-button.active {
+      color: white;
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .artifact-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .artifact-list li {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+
+    .artifact-list strong {
+      display: block;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+
+    .artifact-list span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: #eff6ff;
+      padding: 14px 16px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: #1e3a8a;
+    }
+
+    .callout.warning {
+      border-color: var(--accent-3);
+      background: #fffaeb;
+      color: #7c2d12;
+    }
+
+    .footer {
+      padding: 32px 0 48px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      background: #eef2f7;
+      border: 1px solid #d8dee8;
+      border-radius: 5px;
+      padding: 1px 5px;
+      font-size: 0.92em;
+    }
+
+    ul.clean {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 980px) {
+      .hero-grid,
+      .section-head,
+      .grid.two,
+      .grid.three,
+      .grid.four,
+      .framing-grid,
+      .metric-grid,
+      .pipeline,
+      .diagram {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .bar-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero" id="top">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">Mentor demo project story</p>
+        <h1>PySpark 30-Day Purchase Prediction & API Serving</h1>
+        <p class="subtitle">From raw ecommerce event logs to user-level purchase scores and a local API lookup service.</p>
+        <div class="hero-facts" aria-label="Project summary">
+          <div class="fact"><span>Dataset</span><div>Synerise RecSys 2025 event logs</div></div>
+          <div class="fact"><span>Stack</span><div>PySpark, Spark ML, FastAPI, SQLite</div></div>
+          <div class="fact"><span>MVP target</span><div>30-day purchase prediction for prior cart/purchase users</div></div>
+          <div class="fact"><span>Serving</span><div>batch scoring -> SQLite -> FastAPI lookup</div></div>
+        </div>
+      </div>
+      <aside class="hero-panel" aria-label="End-to-end flow">
+        <strong>Implemented story path</strong>
+        <div class="mini-flow">
+          <div><span>Raw event logs</span><span>01</span></div>
+          <div><span>EDA and framing</span><span>02</span></div>
+          <div><span>Feature and label tables</span><span>03</span></div>
+          <div><span>Logistic Regression baseline</span><span>04</span></div>
+          <div><span>Batch scores and API</span><span>05</span></div>
+        </div>
+      </aside>
+    </div>
+  </header>
+
+  <nav class="nav" aria-label="Page sections">
+    <div class="shell nav-inner">
+      <a href="#framing">Framing</a>
+      <a href="#dataset">Dataset</a>
+      <a href="#pipeline">Pipeline</a>
+      <a href="#metrics">Metrics</a>
+      <a href="#decision">Decision</a>
+      <a href="#logic">Feature/Label</a>
+      <a href="#modeling">Model</a>
+      <a href="#api">API</a>
+      <a href="#artifacts">Artifacts</a>
+      <a href="#next">Limits</a>
+    </div>
+  </nav>
+
+  <main>
+    <section id="framing">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Problem Framing</h2>
+            <p>The current target is precise and cohort-bound. It should not be described as broad all-active-user propensity.</p>
+          </div>
+          <div class="badge blue">Current MVP target: prior cart/purchase users</div>
+        </div>
+
+        <div class="grid framing-grid">
+          <article class="card"><h3>Business question</h3><p>Among users with prior cart/purchase behavior, who is likely to buy in the next 30 days?</p></article>
+          <article class="card"><h3>Prediction unit</h3><p><code>client_id</code>, one customer-level row.</p></article>
+          <article class="card"><h3>Training row</h3><p>One eligible client with historical features plus one future-window label.</p></article>
+          <article class="card"><h3>Label</h3><p>Binary indicator: has <code>product_buy</code> in the 30-day target window.</p></article>
+          <article class="card"><h3>Feature window</h3><p>Events before cutoff date <code>2022-11-09</code>.</p></article>
+          <article class="card"><h3>Target window</h3><p><code>2022-11-09</code> through <code>2022-12-08</code>.</p></article>
+          <article class="card"><h3>Current cohort</h3><p>Pre-cutoff <code>add_to_cart</code> OR <code>product_buy</code> users.</p></article>
+          <article class="card"><h3>Limitation</h3><p>Search/page expansion is future work; page visit is high-volume and deferred.</p></article>
+        </div>
+
+        <div style="margin-top:16px">
+          <button class="toggle" type="button" aria-expanded="false" data-collapse="cart-explainer">
+            <span>Why not cart conversion only?</span><span class="chev">+</span>
+          </button>
+          <div class="collapse" id="cart-explainer">
+            <div class="soft-panel">
+              The current cohort is broader than cart-only because prior purchasers without cart history can also be eligible. Cart-only has 1,872,709 clients, while the current cohort has 2,149,796 clients, adding 277,087 clients beyond cart-only. Target-window purchase path validation also found many future buyers without pre-cutoff cart history, so the review recommendation is to keep the current MVP target but rename it as <strong>30-day purchase prediction for prior cart/purchase users</strong>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="dataset">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Dataset Tables</h2>
+            <p>Raw data is event-log based. Product-buy events are used to derive labels; they are not a ready-made supervised label column.</p>
+          </div>
+          <div class="badge warn">No raw query text or product names shown</div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Table</th>
+                <th>Role</th>
+                <th>Key columns</th>
+                <th>Rows</th>
+                <th>MVP usage</th>
+                <th>Privacy note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>page_visit</code></td>
+                <td>Broad activity signal and future all-active cohort candidate.</td>
+                <td><code>client_id</code>, <code>timestamp</code>, <code>url</code></td>
+                <td>199,451,980</td>
+                <td>Deferred due to high volume and cost-benefit review need.</td>
+                <td>No URL values displayed.</td>
+              </tr>
+              <tr>
+                <td><code>search_query</code></td>
+                <td>Search activity signal and broader cohort candidate.</td>
+                <td><code>client_id</code>, <code>timestamp</code>, <code>query</code></td>
+                <td>13,223,769</td>
+                <td>Used as aggregate search count features; raw text excluded.</td>
+                <td>No query values displayed.</td>
+              </tr>
+              <tr>
+                <td><code>add_to_cart</code></td>
+                <td>Strong purchase-intent history event.</td>
+                <td><code>client_id</code>, <code>timestamp</code>, <code>sku</code></td>
+                <td>7,541,117</td>
+                <td>Used for eligibility and features.</td>
+                <td>No row-level client or SKU examples.</td>
+              </tr>
+              <tr>
+                <td><code>remove_from_cart</code></td>
+                <td>Cart friction or behavior intensity signal.</td>
+                <td><code>client_id</code>, <code>timestamp</code>, <code>sku</code></td>
+                <td>2,688,894</td>
+                <td>Used for feature engineering.</td>
+                <td>No row-level examples.</td>
+              </tr>
+              <tr>
+                <td><code>product_buy</code></td>
+                <td>Purchase event source for history features and future label derivation.</td>
+                <td><code>client_id</code>, <code>timestamp</code>, <code>sku</code></td>
+                <td>2,318,502</td>
+                <td>Used for eligibility, features, and target-window label source.</td>
+                <td>Event source, not a displayed label table.</td>
+              </tr>
+              <tr>
+                <td><code>product_properties</code></td>
+                <td>Product metadata dimension for SKU-level category/price features.</td>
+                <td><code>sku</code>, <code>category</code>, <code>price</code>, <code>name</code></td>
+                <td>1,534,050</td>
+                <td>Used after cleaned SKU-level metadata validation.</td>
+                <td>Product names are excluded.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="pipeline">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Pipeline Flow</h2>
+            <p>Each phase exists to keep the project reviewable: data understanding, leakage-safe feature/label construction, model training, offline scoring, and API serving stay separated.</p>
+          </div>
+          <div class="badge good">Click a phase for details</div>
+        </div>
+
+        <div class="pipeline" id="phase-list"></div>
+      </div>
+    </section>
+
+    <section id="metrics">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Key Metrics</h2>
+            <p>Metrics are copied from aggregate docs/artifacts only. They summarize cohorts, labels, model quality, score distribution, and local serving readiness.</p>
+          </div>
+          <div class="badge blue">Aggregate evidence only</div>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card"><h3>Current cohort clients</h3><div class="metric-value">2,149,796</div><p>Pre-cutoff cart or purchase users.</p></article>
+          <article class="metric-card"><h3>Positive labels</h3><div class="metric-value">93,614</div><p>Eligible clients with target-window purchase.</p></article>
+          <article class="metric-card"><h3>Positive rate</h3><div class="metric-value">0.043546</div><p>Class imbalance for current target.</p></article>
+          <article class="metric-card"><h3>Cart-only clients</h3><div class="metric-value">1,872,709</div><p>Cart conversion candidate cohort.</p></article>
+          <article class="metric-card"><h3>Search/cart/buy clients</h3><div class="metric-value">2,796,833</div><p>Broader future active-user candidate.</p></article>
+          <article class="metric-card"><h3>Search-only clients</h3><div class="metric-value">647,037</div><p>Coverage added beyond current cohort.</p></article>
+          <article class="metric-card"><h3>Search-only positive rate</h3><div class="metric-value">0.007466</div><p>Low signal as standalone cohort.</p></article>
+          <article class="metric-card"><h3>Buy-only repeat rate</h3><div class="metric-value">0.105069</div><p>Repeat purchase candidate positive rate.</p></article>
+          <article class="metric-card"><h3>Page-visit clients</h3><div class="metric-value">20,927,946</div><p>All-active future framing requires EDA.</p></article>
+          <article class="metric-card"><h3>ROC-AUC</h3><div class="metric-value">0.840501</div><p>Baseline ranking quality across thresholds.</p></article>
+          <article class="metric-card"><h3>PR-AUC</h3><div class="metric-value">0.254436</div><p>More informative than accuracy for sparse positives.</p></article>
+          <article class="metric-card"><h3>Top 1% lift</h3><div class="metric-value">10.976839</div><p>Highest scored users over baseline positive rate.</p></article>
+          <article class="metric-card"><h3>Batch score rows</h3><div class="metric-value">2,149,796</div><p>One score per eligible client.</p></article>
+          <article class="metric-card"><h3>Predicted positive rate</h3><div class="metric-value">0.240376</div><p>At threshold 0.5.</p></article>
+          <article class="metric-card"><h3>SQLite demo rows</h3><div class="metric-value">500,000</div><p>Local demo export for API lookup.</p></article>
+          <article class="metric-card"><h3>API tests</h3><div class="metric-value">17</div><p>Fake-data tests reported as passing.</p></article>
+        </div>
+
+        <div class="grid two" style="margin-top:18px">
+          <article class="card">
+            <h3>Top-K targeting lift</h3>
+            <div class="bar-list" aria-label="Top K lift">
+              <div class="bar-row"><span>Top 1%</span><div class="bar"><span style="--w:100%"></span></div><strong>10.98x</strong></div>
+              <div class="bar-row"><span>Top 5%</span><div class="bar"><span style="--w:62%"></span></div><strong>6.77x</strong></div>
+              <div class="bar-row"><span>Top 10%</span><div class="bar"><span style="--w:45%"></span></div><strong>4.92x</strong></div>
+            </div>
+          </article>
+          <article class="card">
+            <h3>Score bucket snapshot</h3>
+            <p>Score buckets group continuous probabilities into reviewable ranges. They help inspect distribution and threshold behavior without exposing row-level scores. If only the threshold changes, the score buckets usually stay the same because probabilities are unchanged; the binary positive count changes.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="decision">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Target Framing Decision</h2>
+            <p>The implemented path is valid, but the mentor-facing name must be precise.</p>
+          </div>
+          <div class="badge good">Decision: keep and reframe</div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Option</th>
+                <th>Cohort</th>
+                <th>Business meaning</th>
+                <th>Positive rate</th>
+                <th>Complexity</th>
+                <th>Pipeline reuse</th>
+                <th>Recommendation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Current target, reframed</td>
+                <td>Prior cart or purchase</td>
+                <td>Rank prior cart/purchase users for purchase follow-up.</td>
+                <td>0.043546</td>
+                <td>Low</td>
+                <td>High</td>
+                <td><strong>Keep for MVP, rename/reframe.</strong></td>
+              </tr>
+              <tr>
+                <td>Cart conversion prediction</td>
+                <td>Prior add-to-cart</td>
+                <td>Predict which cart-intent users will buy.</td>
+                <td>0.040271</td>
+                <td>Low-medium</td>
+                <td>High</td>
+                <td>Future variant or comparison target.</td>
+              </tr>
+              <tr>
+                <td>Search/cart/buy active-user propensity</td>
+                <td>Prior search, cart, or purchase</td>
+                <td>Broader behavior-active purchase scoring.</td>
+                <td>0.035199</td>
+                <td>Medium</td>
+                <td>Medium-high</td>
+                <td>Broaden in next iteration.</td>
+              </tr>
+              <tr>
+                <td>All-active page_visit propensity</td>
+                <td>Prior page visit, search, cart, or purchase</td>
+                <td>Broadest observed active-user propensity.</td>
+                <td>Not computed</td>
+                <td>High</td>
+                <td>Medium</td>
+                <td>Future extension after page-visit EDA.</td>
+              </tr>
+              <tr>
+                <td>Repeat purchase prediction</td>
+                <td>Prior buyers</td>
+                <td>Retention-style repeat purchase scoring.</td>
+                <td>0.105069</td>
+                <td>Low-medium</td>
+                <td>Medium-high</td>
+                <td>Future extension.</td>
+              </tr>
+              <tr>
+                <td>Next product/category recommendation</td>
+                <td>Users with enough history</td>
+                <td>Rank product/category candidates instead of binary purchase.</td>
+                <td>Different task</td>
+                <td>High</td>
+                <td>Low-medium</td>
+                <td>Not recommended for current MVP.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout" style="margin-top:16px">
+          Final decision: keep the current MVP target, but name it <strong>30-day purchase prediction for prior cart/purchase users</strong>. It is leakage-safe, already implemented end-to-end, meaningfully broader than cart conversion, and more defensible than a broad all-user claim.
+        </div>
+      </div>
+    </section>
+
+    <section id="logic">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Feature And Label Logic</h2>
+            <p>The supervised target is created from future purchase events after historical features are already separated by cutoff.</p>
+          </div>
+          <div class="badge warn">Association, not causality</div>
+        </div>
+
+        <div class="diagram">
+          <div class="node"><strong>Raw events</strong><p><code>add_to_cart</code>, <code>remove_from_cart</code>, <code>product_buy</code>, <code>search_query</code>, <code>product_properties</code>.</p></div>
+          <div class="node"><strong>Before cutoff</strong><p>Filter history to events before <code>2022-11-09</code> for feature construction.</p></div>
+          <div class="node"><strong>User features</strong><p>Counts, distinct counts, recency, ratios, category and price aggregates.</p></div>
+          <div class="node"><strong>Target window</strong><p>Future <code>product_buy</code> events define binary labels for eligible clients.</p></div>
+          <div class="node"><strong>Training row</strong><p>One client, one feature vector, one label.</p></div>
+        </div>
+
+        <div class="grid three" style="margin-top:16px">
+          <article class="card">
+            <h3>Why counts?</h3>
+            <p>Counts are baseline predictive signals for activity intensity. They do not prove that more events cause purchase.</p>
+          </article>
+          <article class="card">
+            <h3>Why recency?</h3>
+            <p>Recent cart, purchase, or remove behavior can signal fresher intent than older history.</p>
+          </article>
+          <article class="card">
+            <h3>Why ratios?</h3>
+            <p>Ratios summarize behavior relationships, such as purchase relative to cart activity, while handling zero denominators safely.</p>
+          </article>
+          <article class="card">
+            <h3>Search caveat</h3>
+            <p>Search count has aggregate lift, but raw query meaning is noisy and intentionally not displayed.</p>
+          </article>
+          <article class="card">
+            <h3>Same-SKU path caveat</h3>
+            <p>Only 3.579% of target purchase events had prior same-SKU add-to-cart, so same-item cart path is weak as a required assumption.</p>
+          </article>
+          <article class="card">
+            <h3>Future features</h3>
+            <p>Sequence, category transition, session, and page-aware features are natural next iterations.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="modeling">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Modeling Baseline</h2>
+            <p>Spark ML Logistic Regression gives an explainable MVP baseline with probability scores suitable for ranking and API serving.</p>
+          </div>
+          <div class="badge good">36 numeric features</div>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h3>Model recipe</h3>
+            <ul class="clean">
+              <li>Spark ML Logistic Regression.</li>
+              <li>Median imputation for numeric input features.</li>
+              <li>VectorAssembler builds the feature vector.</li>
+              <li>Class weights enabled for sparse positives.</li>
+              <li>Random 80/20 train/test split with seed 42.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Metric interpretation</h3>
+            <ul class="clean">
+              <li>ROC-AUC measures ranking across thresholds.</li>
+              <li>PR-AUC is more useful than accuracy for imbalanced positives.</li>
+              <li>Top-K lift matches targeting workflows.</li>
+              <li>Probability score is more flexible than a hard label.</li>
+              <li>Calibration is not fully validated; use MVP score mainly for ranking.</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="grid two" style="margin-top:16px">
+          <div>
+            <button class="toggle" type="button" aria-expanded="false" data-collapse="why-accuracy">
+              <span>Why not accuracy only?</span><span class="chev">+</span>
+            </button>
+            <div class="collapse" id="why-accuracy"><p>A model could predict almost everyone as negative and appear accurate because positives are sparse. PR-AUC, recall, precision, and Top-K lift reveal whether positives are actually ranked well.</p></div>
+          </div>
+          <div>
+            <button class="toggle" type="button" aria-expanded="false" data-collapse="why-score">
+              <span>Why probability score?</span><span class="chev">+</span>
+            </button>
+            <div class="collapse" id="why-score"><p>A probability-like score supports ranking, threshold review, campaign sizing, and later calibration. A hard label only answers one threshold choice.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="api">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Scoring And API Serving</h2>
+            <p>The API does not run Spark per request. Heavy computation is offline; request handling uses lookup and lightweight metadata.</p>
+          </div>
+          <div class="badge blue">FastAPI + SQLite local MVP</div>
+        </div>
+
+        <div class="diagram">
+          <div class="node"><strong>Feature table</strong><p>Historical user-level features from Spark.</p></div>
+          <div class="node"><strong>Spark ML model</strong><p>Offline Logistic Regression pipeline.</p></div>
+          <div class="node"><strong>Batch score table</strong><p>One score per eligible client.</p></div>
+          <div class="node"><strong>SQLite export</strong><p>Local indexed lookup store for demo.</p></div>
+          <div class="node"><strong>FastAPI</strong><p>Health, metadata, score lookup, manual prediction.</p></div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:18px">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Endpoint</th>
+                <th>Purpose</th>
+                <th>Input</th>
+                <th>Output</th>
+                <th>Error behavior</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>GET /health</code></td>
+                <td>Basic service readiness check.</td>
+                <td>None.</td>
+                <td>Status and service name.</td>
+                <td>200 when app is reachable.</td>
+              </tr>
+              <tr>
+                <td><code>GET /metadata</code></td>
+                <td>Expose task, target window, model version, and serving mode.</td>
+                <td>None.</td>
+                <td>Task metadata and API mode.</td>
+                <td>200 when app is reachable.</td>
+              </tr>
+              <tr>
+                <td><code>GET /scores/{client_id}</code></td>
+                <td>Lookup precomputed batch score.</td>
+                <td>Client identifier from request path.</td>
+                <td>Score, label, model version, scored timestamp.</td>
+                <td>404 if absent; 503 if score database unavailable.</td>
+              </tr>
+              <tr>
+                <td><code>POST /predict</code></td>
+                <td>Manual feature-input prediction using exported Logistic Regression metadata.</td>
+                <td>Feature dictionary.</td>
+                <td>Score, label, decision, missing filled features, feature count.</td>
+                <td>422 for invalid feature values; 503 if model metadata unavailable.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout warning" style="margin-top:16px">
+          Production alternatives would use Postgres, Redis, or an online feature/serving store. SQLite is intentionally a local MVP lookup layer, not a high-concurrency production store.
+        </div>
+      </div>
+    </section>
+
+    <section id="artifacts">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Evidence And Artifact Explorer</h2>
+            <p>Artifacts show aggregate evidence and validation checks. They do not prove causality and do not include raw rows.</p>
+          </div>
+          <div class="badge good">Tabs use existing files only</div>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Artifact categories">
+          <button class="tab-button active" type="button" data-tab="raw">Raw inspection</button>
+          <button class="tab-button" type="button" data-tab="eda">EDA</button>
+          <button class="tab-button" type="button" data-tab="target">Target validation</button>
+          <button class="tab-button" type="button" data-tab="framing-art">Problem framing</button>
+          <button class="tab-button" type="button" data-tab="features">Features</button>
+          <button class="tab-button" type="button" data-tab="labels">Labels</button>
+          <button class="tab-button" type="button" data-tab="model-art">Model</button>
+          <button class="tab-button" type="button" data-tab="scoring-art">Scoring</button>
+          <button class="tab-button" type="button" data-tab="api-art">API tests</button>
+        </div>
+
+        <div class="tab-panel active" id="tab-raw">
+          <ul class="artifact-list">
+            <li><strong><a href="../artifacts/metadata/raw_data_summary.json">artifacts/metadata/raw_data_summary.json</a></strong><span>Raw file schema, format, and sanitized table metadata. Does not prove business target validity.</span></li>
+          </ul>
+        </div>
+        <div class="tab-panel" id="tab-eda">
+          <ul class="artifact-list">
+            <li><strong><a href="../artifacts/eda/table_overview.csv">artifacts/eda/table_overview.csv</a></strong><span>Row counts and table-level coverage.</span></li>
+            <li><strong><a href="../artifacts/eda/business_target_comparison.csv">artifacts/eda/business_target_comparison.csv</a></strong><span>Early target feasibility comparison.</span></li>
+            <li><strong><a href="../artifacts/eda/target_feasibility_notes.md">artifacts/eda/target_feasibility_notes.md</a></strong><span>Notes for target feasibility. Does not create final labels.</span></li>
+          </ul>
+        </div>
+        <div class="tab-panel" id="tab-target">
+          <ul class="artifact-list">
+            <li><strong><a href="../artifacts/target_validation/purchase_path_summary.csv">artifacts/target_validation/purchase_path_summary.csv</a></strong><span>Prior cart and same-SKU purchase path evidence.</span></li>
+            <li><strong><a href="../artifacts/target_validation/feature_target_relationship.csv">artifacts/target_validation/feature_target_relationship.csv</a></strong><span>Bucketed feature positive rates. Directional association only.</span></li>
+            <li><strong><a href="../artifacts/target_validation/target_assumption_validation_summary.md">artifacts/target_validation/target_assumption_validation_summary.md</a></strong><span>Target/feature assumption summary.</span></li>
+          </ul>
+        </div>
+        <div class="tab-panel" id="tab-framing-art">
+          <ul class="artifact-list">
+            <li><strong><a href="../artifacts/problem_framing/candidate_cohort_comparison.csv">artifacts/problem_framing/candidate_cohort_comparison.csv</a></strong><span>Cohort size and overlap comparison.</span></li>
+            <li><strong><a href="../artifacts/problem_framing/candidate_target_balance.csv">artifacts/problem_framing/candidate_target_balance.csv</a></strong><span>Positive rates by candidate problem framing.</span></li>
+            <li><strong><a href="target_problem_framing_review.md">docs/target_problem_framing_review.md</a></strong><span>Human-readable target decision review.</span></li>
+          </ul>
+        </div>
+        <div class="tab-panel" id="tab-features">
+          <ul class="artifact-list">
+            <li><strong><a href="../artifacts/features/feature_summary.json">artifacts/features/feature_summary.json</a></strong><span>Feature row count, feature count, groups, and leakage validation.</span></li>
+            <li><strong><a href="../artifacts/features/feature_catalog.csv">artifacts/features/feature_catalog.csv</a></strong><span>Feature dictionary. Does not include raw rows.</span></li>
+            <li><strong><a href="../artifacts/features/feature_validation.csv">artifacts/features/feature_validation.csv</a></strong><span>Feature table validation checks.</span></li>
+          </ul>
+        </div>
+        <div class="tab-panel" id="tab-labels">
+          <ul class="artifact-list">
+            <li><strong><a href="../artifacts/labels/label_summary.json">artifacts/labels/label_summary.json</a></strong><span>Label definition, class balance, and leakage validation.</span></li>
+            <li><strong><a href="../artifacts/labels/label_validation.csv">artifacts/labels/label_validation.csv</a></strong><span>Binary label and row-count checks.</span></li>
+            <li><strong><a href="../artifacts/labels/training_dataset_validation.csv">artifacts/labels/training_dataset_validation.csv</a></strong><span>Training dataset validation. Does not train a model.</span></li>
+          </ul>
+        </div>
+        <div class="tab-panel" id="tab-model-art">
+          <ul class="artifact-list">
+            <li><strong><a href="../artifacts/modeling/baseline_model_summary.json">artifacts/modeling/baseline_model_summary.json</a></strong><span>Baseline model summary and aggregate metrics.</span></li>
+            <li><strong><a href="../artifacts/modeling/baseline_metrics.csv">artifacts/modeling/baseline_metrics.csv</a></strong><span>Threshold metrics and confusion matrix values.</span></li>
+            <li><strong><a href="../artifacts/modeling/topk_metrics.csv">artifacts/modeling/topk_metrics.csv</a></strong><span>Top-K targeting precision, recall, and lift.</span></li>
+          </ul>
+        </div>
+        <div class="tab-panel" id="tab-scoring-art">
+          <ul class="artifact-list">
+            <li><strong><a href="../artifacts/scoring/scoring_summary.json">artifacts/scoring/scoring_summary.json</a></strong><span>Batch scoring counts, score stats, and leakage checks.</span></li>
+            <li><strong><a href="../artifacts/scoring/score_distribution.csv">artifacts/scoring/score_distribution.csv</a></strong><span>Score buckets for distribution review.</span></li>
+            <li><strong><a href="../artifacts/scoring/scoring_validation.csv">artifacts/scoring/scoring_validation.csv</a></strong><span>Serving schema validation checks.</span></li>
+          </ul>
+        </div>
+        <div class="tab-panel" id="tab-api-art">
+          <ul class="artifact-list">
+            <li><strong><a href="../artifacts/serving/serving_summary.json">artifacts/serving/serving_summary.json</a></strong><span>API serving mode, local SQLite demo row count, test summary.</span></li>
+            <li><strong><a href="../artifacts/serving/api_contract.json">artifacts/serving/api_contract.json</a></strong><span>Endpoint contract and error behavior.</span></li>
+            <li><strong><a href="../artifacts/serving/model_metadata_summary.json">artifacts/serving/model_metadata_summary.json</a></strong><span>Lightweight model metadata export summary. Does not expose row-level examples.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="next">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2>Limitations And Next Steps</h2>
+            <p>The MVP demonstrates an end-to-end production-like path, but several choices remain review or future work.</p>
+          </div>
+          <div class="badge warn">Do not overclaim</div>
+        </div>
+
+        <div class="grid two">
+          <article class="card">
+            <h3>Limitations</h3>
+            <ul class="clean">
+              <li>Current target is not broad all-active-user propensity.</li>
+              <li><code>page_visit</code> is deferred due to cost-benefit and volume.</li>
+              <li>Random split baseline should later be improved with time-based backtesting.</li>
+              <li>Score calibration is not fully validated.</li>
+              <li>Count/recency features are simple baseline signals.</li>
+              <li>SQLite is MVP serving, not production high-concurrency storage.</li>
+              <li>Authentication and access control are not implemented.</li>
+              <li>Recommendation and sequence modeling are future extensions.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <h3>Next steps</h3>
+            <ul class="clean">
+              <li>Review target framing with mentor.</li>
+              <li>Adopt precise target language in mentor discussion.</li>
+              <li>Add time-based validation over multiple cutoffs.</li>
+              <li>Run threshold and cost analysis.</li>
+              <li>Broaden cohort with search/page only after dedicated EDA.</li>
+              <li>Explore sequence and category-aware features.</li>
+              <li>Move serving store to production-grade infrastructure if deploying.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="shell">
+      <p><strong>Sources used:</strong> <code>docs/project_report.md</code>, <code>docs/target_problem_framing_review.md</code>, <code>PLAN.md</code>, <code>jobs/README.md</code>, and aggregate artifacts under <code>artifacts/</code>.</p>
+      <p>Data safety: this page includes only aggregate metrics, high-level schemas, repo-relative paths, and artifact names. It does not include raw client identifiers, raw search query text, product names, row-level examples, row-level predictions, secrets, or local machine paths.</p>
+    </div>
+  </footer>
+
+  <script>
+    const phases = [
+      {
+        n: "01",
+        title: "Raw data inspection",
+        status: "Implemented",
+        why: "Confirm the dataset is Spark-readable and safe to describe.",
+        goal: "Inventory raw Parquet files and schemas.",
+        input: "Files under data/raw.",
+        process: "Infer formats, inspect schemas, count in controlled mode.",
+        output: "Sanitized metadata summary.",
+        evidence: "artifacts/metadata/raw_data_summary.json",
+        risk: "Without inspection, later assumptions about columns, scale, and privacy are weak."
+      },
+      {
+        n: "02",
+        title: "EDA summary",
+        status: "Implemented",
+        why: "Understand table volume, timestamps, nulls, and core entities.",
+        goal: "Produce aggregate dataset understanding.",
+        input: "Raw Spark-readable Parquet tables.",
+        process: "Table counts, schema checks, timestamp coverage, null summaries.",
+        output: "EDA overview artifacts.",
+        evidence: "artifacts/eda/table_overview.csv",
+        risk: "Skipping EDA can hide schema issues, scale issues, or invalid target assumptions."
+      },
+      {
+        n: "03",
+        title: "Target feasibility EDA",
+        status: "Implemented",
+        why: "Choose a plausible supervised target before building labels.",
+        goal: "Compare candidate target windows and business targets.",
+        input: "Raw Spark-readable event tables plus aggregate EDA context from Phase 02.",
+        process: "Compute candidate positives, active cohorts, repeat purchase signals, and class balance.",
+        output: "Business target comparison artifacts.",
+        evidence: "artifacts/eda/business_target_comparison.csv",
+        risk: "A weak target creates unusable labels or a hard-to-explain model."
+      },
+      {
+        n: "04",
+        title: "Preprocessing",
+        status: "Implemented",
+        why: "Standardize raw events for reproducible downstream jobs.",
+        goal: "Create clean processed event tables and SKU-level product metadata.",
+        input: "Raw Spark-readable Parquet event tables and product_properties.",
+        process: "Parse timestamps, derive event_date/event_type, validate rows, defer page_visit, and clean product metadata.",
+        output: "Local processed Parquet tables plus aggregate preprocessing artifacts.",
+        evidence: "jobs/02_preprocess_events.py + artifacts/preprocessing/preprocessing_summary.json",
+        risk: "Bad preprocessing can break feature windows, inflate joins, or leak sensitive fields."
+      },
+      {
+        n: "05",
+        title: "Feature engineering",
+        status: "Implemented",
+        why: "Convert event logs into one user-level prediction row.",
+        goal: "Build leakage-safe historical user behavior features before cutoff.",
+        input: "Phase 04 processed event tables and cleaned product metadata.",
+        process: "Aggregate counts, distinct counts, recency, ratios, category and price features before cutoff.",
+        output: "Local user behavior feature table plus aggregate feature artifacts.",
+        evidence: "jobs/03_build_features.py + artifacts/features/feature_summary.json",
+        risk: "Wrong feature windows can leak target behavior or create duplicate training rows."
+      },
+      {
+        n: "06",
+        title: "Label construction",
+        status: "Implemented",
+        why: "Raw event logs do not include supervised labels.",
+        goal: "Derive binary 30-day target-window purchase labels.",
+        input: "Phase 05 feature table plus Phase 04 processed product_buy events.",
+        process: "Filter target window, group purchases by client_id, left join to eligible clients, fill missing future purchase as 0.",
+        output: "Local label table and training dataset plus aggregate label artifacts.",
+        evidence: "jobs/04_build_labels.py + artifacts/labels/label_summary.json",
+        risk: "Wrong labels mean no valid supervised training, missing negatives, or leakage."
+      },
+      {
+        n: "07",
+        title: "Target/feature validation",
+        status: "Implemented",
+        why: "Check whether current assumptions match observed behavior after feature and label outputs exist.",
+        goal: "Validate cart path, cohort overlap, metadata stability, feature-target relationship, and search signal.",
+        input: "Phase 04 processed events, Phase 05 feature table, and Phase 06 training dataset.",
+        process: "Aggregate-only purchase path, cohort overlap, metadata consistency, feature bucket, and search sanity analysis.",
+        output: "Target validation summaries.",
+        evidence: "jobs/01c_validate_target_and_feature_assumptions.py + artifacts/target_validation/target_assumption_validation_summary.md",
+        risk: "Without this phase, the MVP could overclaim broad all-user propensity or cart conversion."
+      },
+      {
+        n: "08",
+        title: "Candidate framing review",
+        status: "Implemented",
+        why: "Make target naming defensible before mentor review.",
+        goal: "Compare current, cart-only, search/cart/buy, all-active, repeat, and recommendation framings.",
+        input: "Aggregate EDA, Phase 07 target validation, and candidate cohort artifacts.",
+        process: "Set-based cohort comparison and decision matrix.",
+        output: "Target problem framing review.",
+        evidence: "jobs/01d_compare_candidate_problem_framings.py + docs/target_problem_framing_review.md",
+        risk: "Incorrect naming can make a valid model sound broader than it is."
+      },
+      {
+        n: "09",
+        title: "Baseline model training",
+        status: "Implemented",
+        why: "Create an explainable first model and aggregate metrics.",
+        goal: "Train Spark ML Logistic Regression baseline.",
+        input: "Phase 06 training dataset.",
+        process: "Median imputation, VectorAssembler, class weights, train/test split, evaluation.",
+        output: "Local Spark ML model plus aggregate modeling artifacts.",
+        evidence: "jobs/05_train_baseline_model.py + artifacts/modeling/baseline_model_summary.json",
+        risk: "Without a baseline, later tuning has no reference point."
+      },
+      {
+        n: "10",
+        title: "Batch scoring",
+        status: "Implemented",
+        why: "Precompute scores so API requests stay lightweight.",
+        goal: "Score eligible clients offline.",
+        input: "Phase 05 feature table and Phase 09 saved Spark ML model.",
+        process: "Transform features, extract class-1 probability, threshold labels, validate output.",
+        output: "Local score table plus aggregate scoring artifacts.",
+        evidence: "jobs/06_batch_score.py + artifacts/scoring/scoring_summary.json",
+        risk: "Realtime Spark inference in API would be heavy for this MVP."
+      },
+      {
+        n: "11",
+        title: "Serving export",
+        status: "Implemented",
+        why: "Prepare local indexed lookup data for the API.",
+        goal: "Export score table to SQLite and export lightweight LR metadata.",
+        input: "Phase 10 batch score table and Phase 09 model artifacts.",
+        process: "Create SQLite lookup table; export feature order, imputation, coefficients, intercept, threshold.",
+        output: "Local serving DB and local model metadata plus aggregate serving artifacts.",
+        evidence: "jobs/07_export_serving_scores.py + jobs/07_export_model_metadata.py + artifacts/serving/serving_summary.json",
+        risk: "API lookup would be slow or would need Spark per request."
+      },
+      {
+        n: "12",
+        title: "FastAPI lookup API",
+        status: "Implemented",
+        why: "Expose prediction results with a simple reviewable interface.",
+        goal: "Serve health, metadata, score lookup, and manual prediction endpoints.",
+        input: "Phase 11 SQLite score store and lightweight model metadata.",
+        process: "Repository lookup and manual Logistic Regression sigmoid scoring.",
+        output: "Local API contract.",
+        evidence: "api/main.py + api/repository.py + api/model_scoring.py + artifacts/serving/api_contract.json",
+        risk: "Without an API layer, the project stops at offline artifacts and cannot be demoed as serving."
+      },
+      {
+        n: "13",
+        title: "Demo UI",
+        status: "Planned",
+        why: "Create a mentor-friendly interactive demo surface after API review.",
+        goal: "Show lookup and manual feature-input workflows without heavy Spark work.",
+        input: "Phase 12 API contract and fake-safe demo examples.",
+        process: "Build a lightweight UI or static demo guide.",
+        output: "Planned demo interface; no implemented Streamlit/demo UI artifact found.",
+        evidence: "README.md and PLAN.md mark Phase 7C demo UI as planned.",
+        risk: "Without a demo UI, mentor review depends on direct API calls and static docs."
+      },
+      {
+        n: "14",
+        title: "Experiment tracking and tuning",
+        status: "Planned",
+        why: "Compare model variants only after the baseline is understood.",
+        goal: "Train offline variants and compare aggregate metrics.",
+        input: "Phase 06 training dataset and Phase 09 baseline metrics.",
+        process: "Planned offline Spark variant training; not part of API request path.",
+        output: "No experiment artifacts found yet.",
+        evidence: "PLAN.md Phase 8 is Not started.",
+        risk: "Without controlled experiments, threshold/model improvements remain ad hoc."
+      },
+      {
+        n: "15",
+        title: "Load/stress testing and packaging",
+        status: "Planned",
+        why: "Measure API behavior after the API/demo surface is stable.",
+        goal: "Record latency/error behavior and package final review flow.",
+        input: "Phase 12 API and future demo interface.",
+        process: "Planned load testing with aggregate performance reporting.",
+        output: "No load/stress artifacts found yet.",
+        evidence: "PLAN.md Phase 9 is Not started.",
+        risk: "Without load testing, serving performance remains unverified."
+      }
+    ];
+
+    function renderPhases() {
+      const container = document.getElementById("phase-list");
+      container.innerHTML = phases.map((phase, index) => `
+        <details class="phase-card">
+          <summary>
+            <span class="phase-num">Phase ${phase.n}</span>
+            <span class="phase-title">${phase.title}</span>
+            <span class="phase-status ${phase.status === "Planned" ? "planned" : ""}">${phase.status}</span>
+            <span class="phase-why">${phase.why}</span>
+          </summary>
+          <div class="phase-detail">
+            <dl>
+              <dt>Status</dt><dd>${phase.status}</dd>
+              <dt>Goal</dt><dd>${phase.goal}</dd>
+              <dt>Input</dt><dd>${phase.input}</dd>
+              <dt>Process</dt><dd>${phase.process}</dd>
+              <dt>Output</dt><dd>${phase.output}</dd>
+              <dt>Evidence</dt><dd><code>${phase.evidence}</code></dd>
+              <dt>Risk if skipped</dt><dd>${phase.risk}</dd>
+            </dl>
+          </div>
+        </details>
+      `).join("");
+    }
+
+    function setupCollapses() {
+      document.querySelectorAll("[data-collapse]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const panel = document.getElementById(button.dataset.collapse);
+          const isOpen = panel.classList.toggle("open");
+          button.setAttribute("aria-expanded", String(isOpen));
+          const icon = button.querySelector(".chev");
+          if (icon) icon.textContent = isOpen ? "-" : "+";
+        });
+      });
+    }
+
+    function setupTabs() {
+      const buttons = document.querySelectorAll(".tab-button");
+      const panels = document.querySelectorAll(".tab-panel");
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          buttons.forEach((item) => item.classList.remove("active"));
+          panels.forEach((panel) => panel.classList.remove("active"));
+          button.classList.add("active");
+          document.getElementById(`tab-${button.dataset.tab}`).classList.add("active");
+        });
+      });
+    }
+
+    renderPhases();
+    setupCollapses();
+    setupTabs();
+  </script>
+</body>
+</html>
