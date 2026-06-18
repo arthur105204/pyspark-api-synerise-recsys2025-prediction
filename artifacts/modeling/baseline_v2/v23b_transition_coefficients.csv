@@ -1,0 +1,4 @@
+feature_name,coefficient,abs_coefficient,rank_among_all_features
+search_before_cart_count,-0.00749,0.00749,22
+search_to_cart_rate,-0.107695,0.107695,5
+recent_search_then_cart_flag,0.409962,0.409962,2

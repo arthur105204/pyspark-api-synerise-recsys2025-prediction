@@ -1,0 +1,13 @@
+feature_name,family,window_days,variance,correlation_with_previous_window,correlation_with_next_window,recommendation
+add_to_cart_count_30d,add_to_cart_activity,30,12.366872,,0.834193,REVIEW_ONLY_KEEP_IN_V21
+add_to_cart_count_60d,add_to_cart_activity,60,25.510918,0.834193,0.919316,REVIEW_ONLY_KEEP_IN_V21
+add_to_cart_count_90d,add_to_cart_activity,90,37.889554,0.919316,,REVIEW_ONLY_KEEP_IN_V21
+product_buy_count_30d,product_buy_activity,30,1.363511,,0.781737,REVIEW_ONLY_KEEP_IN_V21
+product_buy_count_60d,product_buy_activity,60,3.060837,0.781737,0.897814,REVIEW_ONLY_KEEP_IN_V21
+product_buy_count_90d,product_buy_activity,90,4.619583,0.897814,,REVIEW_ONLY_KEEP_IN_V21
+remove_from_cart_count_30d,remove_from_cart_activity,30,4.446898,,0.848869,REVIEW_ONLY_KEEP_IN_V21
+remove_from_cart_count_60d,remove_from_cart_activity,60,9.233415,0.848869,0.924218,REVIEW_ONLY_KEEP_IN_V21
+remove_from_cart_count_90d,remove_from_cart_activity,90,14.230132,0.924218,,REVIEW_ONLY_KEEP_IN_V21
+search_query_count_30d,search_activity,30,29.812443,,0.776565,REVIEW_ONLY_KEEP_IN_V21
+search_query_count_60d,search_activity,60,88.929194,0.776565,0.876651,REVIEW_ONLY_KEEP_IN_V21
+search_query_count_90d,search_activity,90,169.779082,0.876651,,REVIEW_ONLY_KEEP_IN_V21

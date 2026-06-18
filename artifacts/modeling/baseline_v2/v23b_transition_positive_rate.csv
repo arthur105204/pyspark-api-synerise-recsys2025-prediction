@@ -1,0 +1,13 @@
+feature_name,bucket,row_count,positive_count,positive_rate
+search_before_cart_count,0,1356941,40645,0.029953
+search_before_cart_count,1,140318,6406,0.045653
+search_before_cart_count,2-3,100948,6954,0.068887
+search_before_cart_count,4-10,75317,8936,0.118645
+search_before_cart_count,>10,30057,7696,0.256047
+search_to_cart_rate,"(0,0.25]",357143,15485,0.043358
+search_to_cart_rate,"(0.25,0.50]",858235,18859,0.021974
+search_to_cart_rate,"(0.50,0.75]",174506,10943,0.062708
+search_to_cart_rate,"(0.75,1.0]",82696,11152,0.134855
+search_to_cart_rate,0,231001,14198,0.061463
+recent_search_then_cart_flag,0,1564422,49380,0.031564
+recent_search_then_cart_flag,1,139159,21257,0.152753

@@ -1,0 +1,3 @@
+feature_name,bucket,row_count,positive_count,positive_rate
+recent_search_then_cart_flag,0,1564422,49380,0.031564
+recent_search_then_cart_flag,1,139159,21257,0.152753

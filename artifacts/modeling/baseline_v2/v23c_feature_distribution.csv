@@ -1,0 +1,2 @@
+feature_name,non_null_count,non_null_rate,distinct_count,mean,stddev,min,max,zero_count,zero_rate
+recent_search_then_cart_flag,1703581,1.0,2,0.081686,0.273886,0,1,1564422,0.918314

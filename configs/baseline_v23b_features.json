@@ -1,0 +1,31 @@
+{
+  "version": "baseline_v2_3b",
+  "objective": "Validate whether pre-cutoff search-to-cart progression adds purchase-intent signal beyond Baseline V2-2 raw search activity.",
+  "base_config": "baseline_v2_2",
+  "removed_features": [
+    "is_eligible_purchase_propensity",
+    "buy_to_cart_ratio",
+    "remove_to_cart_ratio",
+    "cart_minus_remove_count",
+    "search_to_cart_ratio",
+    "add_to_cart_count_60d",
+    "product_buy_count_60d",
+    "remove_from_cart_count_60d",
+    "search_query_count_60d"
+  ],
+  "engineered_features": [
+    "search_before_cart_count",
+    "search_to_cart_rate",
+    "recent_search_then_cart_flag"
+  ],
+  "transition_policy": {
+    "status": "add_search_to_cart_context",
+    "search_before_cart_window_days": 7,
+    "recent_search_window_days": 30,
+    "join_keys": [
+      "client_id",
+      "event_ts"
+    ],
+    "note": "V2-3b keeps V2-2 raw search activity features and adds only aggregate pre-cutoff search-to-cart transition context. It does not use raw query text, product/category linking, sessionization, trends, query semantics, embeddings, or target-window events."
+  }
+}

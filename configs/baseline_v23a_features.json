@@ -1,0 +1,49 @@
+{
+  "version": "baseline_v2_3a",
+  "objective": "Validate search quick-win intent representations against the V2-2 baseline without adding transition, trend, session, query semantic, or advanced search features.",
+  "base_config": "baseline_v2_2",
+  "removed_features": [
+    "is_eligible_purchase_propensity",
+    "buy_to_cart_ratio",
+    "remove_to_cart_ratio",
+    "cart_minus_remove_count",
+    "search_to_cart_ratio",
+    "add_to_cart_count_60d",
+    "product_buy_count_60d",
+    "remove_from_cart_count_60d",
+    "search_query_count_60d",
+    "search_query_count",
+    "distinct_search_days",
+    "days_since_last_search_query",
+    "search_query_count_30d",
+    "search_query_count_90d"
+  ],
+  "engineered_features": [
+    "search_count_bucket",
+    "search_recency_bucket",
+    "recent_search_flag"
+  ],
+  "search_quick_win_policy": {
+    "status": "replace_raw_search_features",
+    "search_count_bucket": {
+      "source": "search_query_count",
+      "buckets": {
+        "0": "0 searches",
+        "1": "1 search",
+        "2": "2-5 searches",
+        "3": "6-20 searches",
+        "4": ">20 searches"
+      }
+    },
+    "search_recency_bucket": {
+      "source": "days_since_last_search_query",
+      "threshold_source": "training_snapshot_approx_quantiles",
+      "no_search_bucket": 0
+    },
+    "recent_search_flag": {
+      "source": "days_since_last_search_query",
+      "window_days": 30
+    },
+    "note": "V2-3a implements only quick-win search bucketing/flag features. It does not implement search-to-cart transitions, normalized search intensity, trend features, sessions, query semantics, embeddings, or category transitions."
+  }
+}

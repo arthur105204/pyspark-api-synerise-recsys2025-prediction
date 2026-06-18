@@ -1,0 +1,41 @@
+{
+  "experiment": "baseline_v2_3b",
+  "created_at_utc": "2026-06-18T11:04:22.206167+00:00",
+  "train_input": "data/processed/training/e1_train_2022_10_10/purchase_propensity_30d",
+  "validation_input": "data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d",
+  "search_input": "data/processed/events/search_query",
+  "cart_input": "data/processed/events/add_to_cart",
+  "model_output": "data/models/purchase_propensity_baseline_v23b",
+  "feature_count_e1": 36,
+  "feature_count_v21": 31,
+  "feature_count_v22": 27,
+  "feature_count_v23b": 30,
+  "removed_features": [
+    "is_eligible_purchase_propensity",
+    "buy_to_cart_ratio",
+    "remove_to_cart_ratio",
+    "cart_minus_remove_count",
+    "search_to_cart_ratio",
+    "add_to_cart_count_60d",
+    "product_buy_count_60d",
+    "remove_from_cart_count_60d",
+    "search_query_count_60d"
+  ],
+  "engineered_features": [
+    "search_before_cart_count",
+    "search_to_cart_rate",
+    "recent_search_then_cart_flag"
+  ],
+  "search_before_cart_window_days": 7,
+  "recent_search_window_days": 30,
+  "metrics": {
+    "roc_auc": 0.834653,
+    "pr_auc": 0.255093,
+    "precision_at_1pct": 0.485347,
+    "lift_at_1pct": 11.145748,
+    "precision_at_5pct": 0.296679,
+    "lift_at_5pct": 6.813071,
+    "precision_at_10pct": 0.215285,
+    "lift_at_10pct": 4.943909
+  }
+}

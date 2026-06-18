@@ -1,0 +1,32 @@
+{
+  "version": "baseline_v2_3c",
+  "objective": "Prune V2-3b transition features and isolate the single clean recent_search_then_cart_flag signal on top of Baseline V2-2.",
+  "base_config": "baseline_v2_2",
+  "removed_features": [
+    "is_eligible_purchase_propensity",
+    "buy_to_cart_ratio",
+    "remove_to_cart_ratio",
+    "cart_minus_remove_count",
+    "search_to_cart_ratio",
+    "add_to_cart_count_60d",
+    "product_buy_count_60d",
+    "remove_from_cart_count_60d",
+    "search_query_count_60d"
+  ],
+  "engineered_features": [
+    "recent_search_then_cart_flag"
+  ],
+  "pruned_features_from_v23b": [
+    "search_before_cart_count",
+    "search_to_cart_rate"
+  ],
+  "transition_policy": {
+    "status": "single_flag_only",
+    "recent_search_window_days": 30,
+    "join_keys": [
+      "client_id",
+      "event_ts"
+    ],
+    "note": "V2-3c adds only recent_search_then_cart_flag to the V2-2 baseline. It intentionally excludes search_before_cart_count and search_to_cart_rate to isolate one behavioral signal."
+  }
+}

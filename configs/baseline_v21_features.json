@@ -1,0 +1,16 @@
+{
+  "version": "baseline_v2_1",
+  "objective": "Remove high-confidence defective features while preserving E1 comparability.",
+  "removed_features": [
+    "is_eligible_purchase_propensity",
+    "buy_to_cart_ratio",
+    "remove_to_cart_ratio",
+    "cart_minus_remove_count",
+    "search_to_cart_ratio"
+  ],
+  "rolling_window_policy": {
+    "status": "review_only",
+    "remove_windows_in_v21": false,
+    "note": "Do not remove count_30d/count_60d/count_90d features in V2-1. Generate a window review artifact only."
+  }
+}

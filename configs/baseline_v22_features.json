@@ -1,0 +1,28 @@
+{
+  "version": "baseline_v2_2",
+  "objective": "Validate rolling-window reduction after Baseline V2-1 while preserving temporal split, model class, labels, and evaluation.",
+  "base_config": "baseline_v2_1",
+  "removed_features": [
+    "is_eligible_purchase_propensity",
+    "buy_to_cart_ratio",
+    "remove_to_cart_ratio",
+    "cart_minus_remove_count",
+    "search_to_cart_ratio",
+    "add_to_cart_count_60d",
+    "product_buy_count_60d",
+    "remove_from_cart_count_60d",
+    "search_query_count_60d"
+  ],
+  "rolling_window_policy": {
+    "status": "v22_remove_60d_only",
+    "keep_windows": [
+      "total_count",
+      "count_30d",
+      "count_90d"
+    ],
+    "removed_windows": [
+      "count_60d"
+    ],
+    "note": "V2-2 removes standalone 60-day rolling count features only. 90-day features are kept in this isolated experiment so their value can be evaluated separately after V2-2 metrics are available."
+  }
+}
