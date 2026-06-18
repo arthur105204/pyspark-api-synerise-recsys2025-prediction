@@ -63,6 +63,24 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Lookback window in days. Can be passed multiple times. Default: 30, 60, 90.",
     )
+    parser.add_argument(
+        "--cutoff-date",
+        default=None,
+        help="Optional cutoff date override in YYYY-MM-DD format. Defaults to target.cutoff_date from config.",
+    )
+    parser.add_argument(
+        "--target-end",
+        default=None,
+        help="Optional target end date override in YYYY-MM-DD format for metadata only. Defaults to target.target_end.",
+    )
+    parser.add_argument(
+        "--snapshot-name",
+        default=None,
+        help=(
+            "Optional snapshot or experiment name. When provided, outputs are written under "
+            "data/processed/features/<snapshot-name>/ and artifacts/features/<snapshot-name>/."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -75,6 +93,26 @@ def resolve_repo_path(path_text: str) -> Path:
     if path.is_absolute():
         raise ValueError("path arguments must be repo-relative")
     return PROJECT_ROOT / path
+
+
+def validate_snapshot_name(snapshot_name: str | None) -> str | None:
+    if snapshot_name is None:
+        return None
+    allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+    if not snapshot_name or any(character not in allowed for character in snapshot_name):
+        raise ValueError("--snapshot-name may only contain letters, numbers, underscores, and hyphens")
+    return snapshot_name
+
+
+def target_window_days(cutoff_date: str, target_end: str) -> int | None:
+    if not target_end or target_end == "None":
+        return None
+    cutoff = datetime.strptime(cutoff_date, "%Y-%m-%d").date()
+    end = datetime.strptime(target_end, "%Y-%m-%d").date()
+    days = (end - cutoff).days + 1
+    if days <= 0:
+        raise ValueError("target end date must be on or after cutoff date")
+    return days
 
 
 def normalize_value(value: Any) -> Any:
@@ -346,13 +384,24 @@ def main() -> int:
     config_path = resolve_repo_path(args.config)
     config = read_simple_yaml(config_path)
     output_base = resolve_repo_path(args.output_base)
-    feature_output_path = output_base / FEATURE_OUTPUT_DIR
+    snapshot_name = validate_snapshot_name(args.snapshot_name)
+    feature_output_path = (
+        output_base / "features" / snapshot_name / "user_behavior_features"
+        if snapshot_name
+        else output_base / FEATURE_OUTPUT_DIR
+    )
+    artifact_dir = ARTIFACT_DIR / snapshot_name if snapshot_name else ARTIFACT_DIR
+    feature_summary_path = artifact_dir / "feature_summary.json"
+    feature_catalog_path = artifact_dir / "feature_catalog.csv"
+    feature_validation_path = artifact_dir / "feature_validation.csv"
+    feature_notes_path = artifact_dir / "feature_notes.md"
     windows = args.feature_window_days or [30, 60, 90]
     target_config = config.get("target", {})
-    cutoff_date = str(target_config.get("cutoff_date"))
-    target_end = str(target_config.get("target_end"))
+    cutoff_date = str(args.cutoff_date or target_config.get("cutoff_date"))
+    target_end = str(args.target_end or target_config.get("target_end"))
     if not cutoff_date or cutoff_date == "None":
         raise ValueError("configs/pipeline_config.yaml must define target.cutoff_date")
+    target_window_day_count = target_window_days(cutoff_date, target_end)
 
     search_path = output_base / "events" / "search_query"
     include_search = args.include_search or search_path.exists()
@@ -425,15 +474,16 @@ def main() -> int:
             "generated_at_date": datetime.now(timezone.utc).date().isoformat(),
             "phase": "Phase 3: Feature Engineering",
             "status": "success",
+            "snapshot_name": snapshot_name,
             "feature_output_path": relative_path(feature_output_path),
             "artifact_paths": {
-                "summary": relative_path(FEATURE_SUMMARY_PATH),
-                "catalog": relative_path(FEATURE_CATALOG_PATH),
-                "validation": relative_path(FEATURE_VALIDATION_PATH),
-                "notes": relative_path(FEATURE_NOTES_PATH),
+                "summary": relative_path(feature_summary_path),
+                "catalog": relative_path(feature_catalog_path),
+                "validation": relative_path(feature_validation_path),
+                "notes": relative_path(feature_notes_path),
             },
             "target_task": target_config.get("task"),
-            "target_window_days": target_config.get("target_window_days"),
+            "target_window_days": target_window_day_count,
             "cutoff_date": cutoff_date,
             "target_end": target_end,
             "feature_window_days": windows,
@@ -467,25 +517,25 @@ def main() -> int:
             },
         }
 
-        write_json(FEATURE_SUMMARY_PATH, summary)
+        write_json(feature_summary_path, summary)
         write_csv(
-            FEATURE_CATALOG_PATH,
+            feature_catalog_path,
             feature_catalog,
             ["feature_name", "data_type", "feature_group", "description"],
         )
         write_csv(
-            FEATURE_VALIDATION_PATH,
+            feature_validation_path,
             feature_validation,
             ["feature_name", "data_type", "total_rows", "null_count", "null_rate", "min_value", "max_value", "avg_value"],
         )
-        write_notes(FEATURE_NOTES_PATH, summary)
+        write_notes(feature_notes_path, summary)
 
         print("Feature engineering completed.")
         print(f"Feature rows: {total_rows}")
         print(f"Eligible cohort count: {eligible_count}")
         print(f"Search features included: {include_search}")
         print(f"Wrote feature table to {relative_path(feature_output_path)}")
-        print(f"Wrote sanitized artifacts under {relative_path(ARTIFACT_DIR)}")
+        print(f"Wrote sanitized artifacts under {relative_path(artifact_dir)}")
         return 0
     finally:
         spark.stop()

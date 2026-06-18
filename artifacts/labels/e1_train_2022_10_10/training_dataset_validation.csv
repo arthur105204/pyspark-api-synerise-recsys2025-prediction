@@ -1,0 +1,6 @@
+check_name,status,observed_value,expected_value,notes
+training_row_count_equals_label_row_count,pass,1703581,1703581,Training dataset is label table joined to eligible feature rows.
+feature_count_used,pass,36,36,Feature count excludes client_id.
+no_duplicate_client_id_in_training_dataset,pass,0,0,Training dataset should have one row per eligible client.
+no_null_labels_in_training_dataset,pass,0,0,Label is required.
+no_prediction_or_model_columns,pass,,,Training dataset must not include prediction or model output columns.

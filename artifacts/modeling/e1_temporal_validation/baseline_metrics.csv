@@ -1,0 +1,16 @@
+metric_name,value,notes
+mode,temporal,Evaluation mode used for this run.
+train_rows,1703581,Rows used for model training.
+validation_rows,2149796,Rows used for model evaluation.
+train_positive_rate,0.041464,Positive rate in training rows.
+validation_positive_rate,0.043546,Positive rate in evaluation rows.
+roc_auc,0.835559,Area under ROC curve.
+pr_auc,0.253155,Area under precision-recall curve.
+threshold,0.5,Threshold used for confusion matrix.
+tp,66444,True positives at threshold.
+fp,429412,False positives at threshold.
+tn,1626770,True negatives at threshold.
+fn,27170,False negatives at threshold.
+precision,0.133999,Precision at threshold.
+recall,0.709766,Recall at threshold.
+f1,0.225436,F1 at threshold.

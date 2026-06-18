@@ -57,6 +57,33 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_ARTIFACTS_BASE.relative_to(PROJECT_ROOT).as_posix(),
         help="Repo-relative artifacts base. Default: artifacts.",
     )
+    parser.add_argument(
+        "--feature-input",
+        default=None,
+        help=(
+            "Optional repo-relative Phase 3 feature table path. Defaults to the baseline feature table, "
+            "or the matching snapshot feature table when --snapshot-name is provided."
+        ),
+    )
+    parser.add_argument(
+        "--cutoff-date",
+        default=None,
+        help="Optional cutoff date override in YYYY-MM-DD format. Defaults to target.cutoff_date from config.",
+    )
+    parser.add_argument(
+        "--target-end",
+        default=None,
+        help="Optional target end date override in YYYY-MM-DD format. Defaults to target.target_end from config.",
+    )
+    parser.add_argument(
+        "--snapshot-name",
+        default=None,
+        help=(
+            "Optional snapshot or experiment name. When provided, outputs are written under "
+            "data/processed/labels/<snapshot-name>/, data/processed/training/<snapshot-name>/, "
+            "and artifacts/labels/<snapshot-name>/."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -69,6 +96,24 @@ def resolve_repo_path(path_text: str) -> Path:
     if path.is_absolute():
         raise ValueError("path arguments must be repo-relative")
     return PROJECT_ROOT / path
+
+
+def validate_snapshot_name(snapshot_name: str | None) -> str | None:
+    if snapshot_name is None:
+        return None
+    allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+    if not snapshot_name or any(character not in allowed for character in snapshot_name):
+        raise ValueError("--snapshot-name may only contain letters, numbers, underscores, and hyphens")
+    return snapshot_name
+
+
+def target_window_days(cutoff_date: str, target_end: str) -> int:
+    cutoff = datetime.strptime(cutoff_date, "%Y-%m-%d").date()
+    end = datetime.strptime(target_end, "%Y-%m-%d").date()
+    days = (end - cutoff).days + 1
+    if days <= 0:
+        raise ValueError("target end date must be on or after cutoff date")
+    return days
 
 
 def read_simple_yaml(path: Path) -> dict[str, Any]:
@@ -191,9 +236,25 @@ def main() -> int:
     config_path = resolve_repo_path(args.config)
     output_base = resolve_repo_path(args.output_base)
     artifacts_base = resolve_repo_path(args.artifacts_base)
-    label_output_path = output_base / LABEL_OUTPUT_DIR
-    training_output_path = output_base / TRAINING_OUTPUT_DIR
-    label_artifact_dir = artifacts_base / "labels"
+    snapshot_name = validate_snapshot_name(args.snapshot_name)
+    feature_input_path = (
+        resolve_repo_path(args.feature_input)
+        if args.feature_input
+        else output_base / "features" / snapshot_name / "user_behavior_features"
+        if snapshot_name
+        else output_base / "features" / "user_behavior_features"
+    )
+    label_output_path = (
+        output_base / "labels" / snapshot_name / "purchase_propensity_30d"
+        if snapshot_name
+        else output_base / LABEL_OUTPUT_DIR
+    )
+    training_output_path = (
+        output_base / "training" / snapshot_name / "purchase_propensity_30d"
+        if snapshot_name
+        else output_base / TRAINING_OUTPUT_DIR
+    )
+    label_artifact_dir = artifacts_base / "labels" / snapshot_name if snapshot_name else artifacts_base / "labels"
     summary_path = label_artifact_dir / "label_summary.json"
     label_validation_path = label_artifact_dir / "label_validation.csv"
     training_validation_path = label_artifact_dir / "training_dataset_validation.csv"
@@ -202,17 +263,17 @@ def main() -> int:
     config = read_simple_yaml(config_path)
     target_config = config.get("target", {})
     task = str(target_config.get("task"))
-    target_window_days = int(target_config.get("target_window_days"))
-    cutoff_date = str(target_config.get("cutoff_date"))
-    target_end = str(target_config.get("target_end"))
+    cutoff_date = str(args.cutoff_date or target_config.get("cutoff_date"))
+    target_end = str(args.target_end or target_config.get("target_end"))
     if not cutoff_date or cutoff_date == "None" or not target_end or target_end == "None":
         raise ValueError("configs/pipeline_config.yaml must define target.cutoff_date and target.target_end")
+    target_window_day_count = target_window_days(cutoff_date, target_end)
 
     boundary_rule = "event_ts >= cutoff_date and event_ts < date_add(target_end, 1)"
 
     spark = start_spark()
     try:
-        features = spark.read.parquet(str(output_base / "features" / "user_behavior_features"))
+        features = spark.read.parquet(str(feature_input_path))
         product_buy = spark.read.parquet(str(output_base / "events" / "product_buy"))
 
         feature_columns = [column for column in features.columns if column != "client_id"]
@@ -270,21 +331,39 @@ def main() -> int:
         clean_output_dir(training_output_path, output_base)
         training.write.mode("overwrite").parquet(str(training_output_path))
 
-        positive_count_matches_expected = abs(positive_count - EXPECTED_POSITIVE_COUNT) <= 1
+        enforce_default_expected_counts = snapshot_name is None and args.cutoff_date is None and args.target_end is None
+        eligible_count_matches_expected = (
+            eligible_count == EXPECTED_ELIGIBLE_COUNT if enforce_default_expected_counts else True
+        )
+        positive_count_matches_expected = (
+            abs(positive_count - EXPECTED_POSITIVE_COUNT) <= 1 if enforce_default_expected_counts else True
+        )
+        expected_eligible_value: Any = EXPECTED_ELIGIBLE_COUNT if enforce_default_expected_counts else ""
+        expected_positive_value: Any = EXPECTED_POSITIVE_COUNT if enforce_default_expected_counts else ""
+        expected_count_note = (
+            "Only eligible clients are included in the label table."
+            if enforce_default_expected_counts
+            else "Snapshot run: baseline expected eligible count is not enforced."
+        )
+        expected_positive_note = (
+            "Positive clients have at least one product_buy event in the target window."
+            if enforce_default_expected_counts
+            else "Snapshot run: baseline expected positive count is not enforced."
+        )
         label_validation_rows = [
             check_row(
                 "label_row_count_equals_eligible_cohort_count",
-                label_row_count == eligible_count == EXPECTED_ELIGIBLE_COUNT,
+                label_row_count == eligible_count and eligible_count_matches_expected,
                 label_row_count,
-                EXPECTED_ELIGIBLE_COUNT,
-                "Only eligible clients are included in the label table.",
+                expected_eligible_value,
+                expected_count_note,
             ),
             check_row(
                 "positive_count_matches_phase_1_1",
                 positive_count_matches_expected,
                 positive_count,
-                EXPECTED_POSITIVE_COUNT,
-                "Positive clients have at least one product_buy event in the target window.",
+                expected_positive_value,
+                expected_positive_note,
             ),
             check_row(
                 "label_values_only_0_or_1",
@@ -345,14 +424,16 @@ def main() -> int:
             "generated_at_date": datetime.now(timezone.utc).date().isoformat(),
             "phase": "Phase 4: Label Construction",
             "status": "success",
+            "snapshot_name": snapshot_name,
             "task": task,
-            "target_window_days": target_window_days,
+            "target_window_days": target_window_day_count,
             "cutoff_date": cutoff_date,
             "target_window_start": cutoff_date,
             "target_window_end": target_end,
             "boundary_rule": boundary_rule,
             "eligible_cohort_definition": target_config.get("eligible_cohort"),
             "positive_definition": target_config.get("positive_definition"),
+            "feature_input_path": relative_path(feature_input_path),
             "label_output_path": relative_path(label_output_path),
             "training_dataset_output_path": relative_path(training_output_path),
             "eligible_cohort_count": eligible_count,
@@ -362,8 +443,12 @@ def main() -> int:
             "positive_rate": positive_rate,
             "training_dataset_row_count": training_row_count,
             "feature_count_used": feature_count_used,
-            "expected_phase_1_1_positive_count": EXPECTED_POSITIVE_COUNT,
-            "expected_phase_1_1_positive_count_match": positive_count_matches_expected,
+            "expected_counts_enforced": enforce_default_expected_counts,
+            "expected_phase_1_1_eligible_count": EXPECTED_ELIGIBLE_COUNT if enforce_default_expected_counts else None,
+            "expected_phase_1_1_positive_count": EXPECTED_POSITIVE_COUNT if enforce_default_expected_counts else None,
+            "expected_phase_1_1_positive_count_match": (
+                positive_count_matches_expected if enforce_default_expected_counts else None
+            ),
             "duplicate_handling_policy": (
                 "Target-window purchases are aggregated to one row per client_id; multiple purchases increase "
                 "target_event_count but keep label binary."

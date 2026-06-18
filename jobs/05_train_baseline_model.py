@@ -33,8 +33,14 @@ from pyspark.sql import types as T
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "configs" / "pipeline_config.yaml"
 DEFAULT_INPUT_PATH = PROJECT_ROOT / "data" / "processed" / "training" / "purchase_propensity_30d"
+DEFAULT_TEMPORAL_TRAIN_INPUT = PROJECT_ROOT / "data" / "processed" / "training" / "e1_train_2022_10_10" / "purchase_propensity_30d"
+DEFAULT_TEMPORAL_VALIDATION_INPUT = PROJECT_ROOT / "data" / "processed" / "training" / "e1_valid_2022_11_09" / "purchase_propensity_30d"
 DEFAULT_MODEL_OUTPUT = PROJECT_ROOT / "data" / "models" / "purchase_propensity_baseline"
+DEFAULT_TEMPORAL_MODEL_OUTPUT = PROJECT_ROOT / "data" / "models" / "purchase_propensity_baseline_temporal"
 DEFAULT_ARTIFACTS_BASE = PROJECT_ROOT / "artifacts"
+DEFAULT_TEMPORAL_ARTIFACT_DIR = "modeling/e1_temporal_validation"
+DEFAULT_TEMPORAL_TRAIN_SNAPSHOT = "e1_train_2022_10_10"
+DEFAULT_TEMPORAL_VALIDATION_SNAPSHOT = "e1_valid_2022_11_09"
 DEFAULT_SEED = 42
 DEFAULT_SAMPLE_FRACTION = 1.0
 DEFAULT_MAX_ITER = 20
@@ -81,6 +87,27 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=DEFAULT_SAMPLE_FRACTION,
         help="Optional Spark sample fraction for debugging. Use 1.0 for final metrics.",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["random", "temporal"],
+        default="random",
+        help="Evaluation mode. Default random preserves the existing random 80/20 split workflow.",
+    )
+    parser.add_argument(
+        "--validation-input-path",
+        default=DEFAULT_TEMPORAL_VALIDATION_INPUT.relative_to(PROJECT_ROOT).as_posix(),
+        help="Repo-relative validation snapshot training dataset path for --mode temporal.",
+    )
+    parser.add_argument(
+        "--train-snapshot-name",
+        default=DEFAULT_TEMPORAL_TRAIN_SNAPSHOT,
+        help="Snapshot name recorded in temporal mode summary.",
+    )
+    parser.add_argument(
+        "--validation-snapshot-name",
+        default=DEFAULT_TEMPORAL_VALIDATION_SNAPSHOT,
+        help="Validation snapshot name recorded in temporal mode summary.",
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED, help="Deterministic split seed.")
     parser.add_argument("--max-iter", type=int, default=DEFAULT_MAX_ITER, help="Logistic Regression max iterations.")
@@ -241,6 +268,33 @@ def positive_count(df: DataFrame) -> int:
     return int(df.where(F.col("label") == 1).count())
 
 
+def validate_modeling_dataset(df: DataFrame, dataset_name: str) -> dict[str, Any]:
+    required_columns = {"client_id", "label"}
+    missing_required = sorted(required_columns.difference(df.columns))
+    if missing_required:
+        raise ValueError(f"{dataset_name} dataset is missing required columns: {', '.join(missing_required)}")
+    label_null_count = df.where(F.col("label").isNull()).count()
+    invalid_label_count = df.where(~F.col("label").isin([0, 1]) | F.col("label").isNull()).count()
+    duplicate_count = duplicate_client_count(df)
+    row_count = df.count()
+    positive_rows = positive_count(df)
+    negative_rows = row_count - positive_rows
+    positive_rate = positive_rows / row_count if row_count else 0.0
+    if not row_count or not positive_rows or not negative_rows:
+        raise ValueError(f"{dataset_name} dataset must contain positive and negative rows")
+    if label_null_count or invalid_label_count or duplicate_count:
+        raise ValueError(f"{dataset_name} dataset failed label or duplicate validation")
+    return {
+        "row_count": row_count,
+        "positive_count": positive_rows,
+        "negative_count": negative_rows,
+        "positive_rate": positive_rate,
+        "label_null_count": label_null_count,
+        "invalid_label_count": invalid_label_count,
+        "duplicate_client_id_count": duplicate_count,
+    }
+
+
 def confusion_metrics(predictions: DataFrame, threshold: float) -> dict[str, Any]:
     scored = predictions.withColumn("predicted_label", (F.col("prediction_score") >= threshold).cast("int"))
     row = scored.agg(
@@ -301,9 +355,19 @@ def main() -> int:
 
     config_path = resolve_repo_path(args.config)
     input_path = resolve_repo_path(args.input_path)
-    model_output_path = resolve_repo_path(args.model_output)
+    validation_input_path = resolve_repo_path(args.validation_input_path)
+    default_input_arg = DEFAULT_INPUT_PATH.relative_to(PROJECT_ROOT).as_posix()
+    default_model_arg = DEFAULT_MODEL_OUTPUT.relative_to(PROJECT_ROOT).as_posix()
+    if args.mode == "temporal" and args.input_path == default_input_arg:
+        input_path = DEFAULT_TEMPORAL_TRAIN_INPUT
+    if args.mode == "temporal" and args.model_output == default_model_arg:
+        model_output_path = DEFAULT_TEMPORAL_MODEL_OUTPUT
+    else:
+        model_output_path = resolve_repo_path(args.model_output)
     artifacts_base = resolve_repo_path(args.artifacts_base)
-    modeling_artifact_dir = artifacts_base / "modeling"
+    modeling_artifact_dir = (
+        artifacts_base / DEFAULT_TEMPORAL_ARTIFACT_DIR if args.mode == "temporal" else artifacts_base / "modeling"
+    )
     summary_path = modeling_artifact_dir / "baseline_model_summary.json"
     baseline_metrics_path = modeling_artifact_dir / "baseline_metrics.csv"
     topk_metrics_path = modeling_artifact_dir / "topk_metrics.csv"
@@ -320,14 +384,14 @@ def main() -> int:
     spark = start_spark()
     try:
         dataset = spark.read.parquet(str(input_path))
+        validation_dataset = None
+        if args.mode == "temporal":
+            validation_dataset = spark.read.parquet(str(validation_input_path)).cache()
         if args.sample_fraction < 1.0:
             dataset = dataset.sample(withReplacement=False, fraction=args.sample_fraction, seed=seed)
+            if validation_dataset is not None:
+                validation_dataset = validation_dataset.sample(withReplacement=False, fraction=args.sample_fraction, seed=seed)
         dataset = dataset.cache()
-
-        required_columns = {"client_id", "label"}
-        missing_required = sorted(required_columns.difference(dataset.columns))
-        if missing_required:
-            raise ValueError(f"Training dataset is missing required columns: {', '.join(missing_required)}")
 
         label_like = label_like_columns(dataset.columns)
         feature_columns = numeric_feature_columns(dataset.schema)
@@ -336,18 +400,25 @@ def main() -> int:
         leakage_feature_columns = sorted(set(feature_columns).intersection(EXCLUDED_COLUMNS).union(label_like))
         if leakage_feature_columns:
             raise ValueError("Label-like or metadata columns were selected as features")
+        if validation_dataset is not None:
+            validation_label_like = label_like_columns(validation_dataset.columns)
+            validation_feature_columns = numeric_feature_columns(validation_dataset.schema)
+            if validation_label_like:
+                raise ValueError("Validation dataset contains label-like metadata columns")
+            if validation_feature_columns != feature_columns:
+                raise ValueError("Temporal validation dataset feature columns do not match training dataset")
 
-        total_count = dataset.count()
-        label_null_count = dataset.where(F.col("label").isNull()).count()
-        invalid_label_count = dataset.where(~F.col("label").isin([0, 1]) | F.col("label").isNull()).count()
-        duplicate_count = duplicate_client_count(dataset)
-        total_positive_count = positive_count(dataset)
-        total_negative_count = total_count - total_positive_count
-        positive_rate = total_positive_count / total_count if total_count else 0.0
-        if not total_count or not total_positive_count or not total_negative_count:
-            raise ValueError("Training dataset must contain positive and negative rows")
-        if label_null_count or invalid_label_count or duplicate_count:
-            raise ValueError("Training dataset failed label or duplicate validation")
+        train_dataset_metrics = validate_modeling_dataset(dataset, "Training")
+        total_count = train_dataset_metrics["row_count"]
+        label_null_count = train_dataset_metrics["label_null_count"]
+        invalid_label_count = train_dataset_metrics["invalid_label_count"]
+        duplicate_count = train_dataset_metrics["duplicate_client_id_count"]
+        total_positive_count = train_dataset_metrics["positive_count"]
+        total_negative_count = train_dataset_metrics["negative_count"]
+        positive_rate = train_dataset_metrics["positive_rate"]
+        validation_dataset_metrics = (
+            validate_modeling_dataset(validation_dataset, "Temporal validation") if validation_dataset is not None else None
+        )
 
         positive_weight = total_count / (2 * total_positive_count)
         negative_weight = total_count / (2 * total_negative_count)
@@ -374,7 +445,15 @@ def main() -> int:
             for column in feature_columns
         ]
 
-        train_df, test_df = prepared.randomSplit([0.8, 0.2], seed=seed)
+        if args.mode == "random":
+            train_df, test_df = prepared.randomSplit([0.8, 0.2], seed=seed)
+            split_strategy = "random 80/20 split"
+            evaluation_input_path = input_path
+        else:
+            train_df = prepared
+            test_df = validation_dataset
+            split_strategy = "temporal snapshot holdout"
+            evaluation_input_path = validation_input_path
         train_df = train_df.cache()
         test_df = test_df.cache()
         train_count = train_df.count()
@@ -431,11 +510,16 @@ def main() -> int:
         )
         summary = {
             "generated_at_date": datetime.now(timezone.utc).date().isoformat(),
+            "generated_at_timestamp": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
             "phase": "Phase 5: Baseline Modeling",
             "status": "success",
+            "mode": args.mode,
             "task": task,
             "model_type": "LogisticRegression",
             "input_training_dataset_path": relative_path(input_path),
+            "input_validation_dataset_path": relative_path(evaluation_input_path),
+            "train_snapshot_name": args.train_snapshot_name if args.mode == "temporal" else None,
+            "validation_snapshot_name": args.validation_snapshot_name if args.mode == "temporal" else None,
             "model_output_path": relative_path(model_output_path),
             "row_count": total_count,
             "positive_count": total_positive_count,
@@ -443,16 +527,19 @@ def main() -> int:
             "positive_rate": positive_rate,
             "train_rows": train_count,
             "test_rows": test_count,
+            "validation_rows": test_count,
             "train_positive_count": train_positive_count,
             "test_positive_count": test_positive_count,
+            "validation_positive_count": test_positive_count,
             "train_positive_rate": train_positive_rate,
             "test_positive_rate": test_positive_rate,
+            "validation_positive_rate": test_positive_rate,
             "feature_count": len(feature_columns),
             "imputation_strategy": "median",
             "class_weighting_enabled": use_class_weights,
             "positive_class_weight": positive_weight if use_class_weights else None,
             "negative_class_weight": negative_weight if use_class_weights else None,
-            "split_strategy": "random 80/20 split",
+            "split_strategy": split_strategy,
             "seed": seed,
             "sample_fraction": args.sample_fraction,
             "max_iter": int(args.max_iter),
@@ -475,10 +562,21 @@ def main() -> int:
                 "label_null_count": label_null_count,
                 "invalid_label_count": invalid_label_count,
                 "duplicate_client_id_count": duplicate_count,
+                "validation_label_null_count": (
+                    validation_dataset_metrics["label_null_count"] if validation_dataset_metrics else None
+                ),
+                "validation_invalid_label_count": (
+                    validation_dataset_metrics["invalid_label_count"] if validation_dataset_metrics else None
+                ),
+                "validation_duplicate_client_id_count": (
+                    validation_dataset_metrics["duplicate_client_id_count"] if validation_dataset_metrics else None
+                ),
                 "model_output_exists": model_output_exists,
             },
             "leakage_validation": {
-                "input_dataset_source": "Phase 4 training dataset",
+                "input_dataset_source": (
+                    "Phase 4 temporal snapshot training datasets" if args.mode == "temporal" else "Phase 4 training dataset"
+                ),
                 "phase_4_labels_leakage_safe": True,
                 "target_window_features_created": False,
                 "excluded_columns": sorted(EXCLUDED_COLUMNS),
@@ -496,11 +594,27 @@ def main() -> int:
             },
         }
 
-        baseline_metric_rows = [
-            {"metric_name": "train_rows", "value": train_count, "notes": "Rows in deterministic train split."},
-            {"metric_name": "test_rows", "value": test_count, "notes": "Rows in deterministic test split."},
-            {"metric_name": "train_positive_rate", "value": train_positive_rate, "notes": "Positive rate in train split."},
-            {"metric_name": "test_positive_rate", "value": test_positive_rate, "notes": "Positive rate in test split."},
+        if args.mode == "random":
+            baseline_metric_rows = [
+                {"metric_name": "train_rows", "value": train_count, "notes": "Rows in deterministic train split."},
+                {"metric_name": "test_rows", "value": test_count, "notes": "Rows in deterministic test split."},
+                {"metric_name": "train_positive_rate", "value": train_positive_rate, "notes": "Positive rate in train split."},
+                {"metric_name": "test_positive_rate", "value": test_positive_rate, "notes": "Positive rate in test split."},
+            ]
+        else:
+            baseline_metric_rows = [
+                {"metric_name": "mode", "value": args.mode, "notes": "Evaluation mode used for this run."},
+                {"metric_name": "train_rows", "value": train_count, "notes": "Rows used for model training."},
+                {"metric_name": "validation_rows", "value": test_count, "notes": "Rows used for model evaluation."},
+                {"metric_name": "train_positive_rate", "value": train_positive_rate, "notes": "Positive rate in training rows."},
+                {
+                    "metric_name": "validation_positive_rate",
+                    "value": test_positive_rate,
+                    "notes": "Positive rate in evaluation rows.",
+                },
+            ]
+        baseline_metric_rows.extend(
+            [
             {"metric_name": "roc_auc", "value": roc_auc, "notes": "Area under ROC curve."},
             {"metric_name": "pr_auc", "value": pr_auc, "notes": "Area under precision-recall curve."},
             {"metric_name": "threshold", "value": threshold, "notes": "Threshold used for confusion matrix."},
@@ -511,7 +625,8 @@ def main() -> int:
             {"metric_name": "precision", "value": confusion["precision"], "notes": "Precision at threshold."},
             {"metric_name": "recall", "value": confusion["recall"], "notes": "Recall at threshold."},
             {"metric_name": "f1", "value": confusion["f1"], "notes": "F1 at threshold."},
-        ]
+            ]
+        )
 
         write_json(summary_path, summary)
         write_csv(baseline_metrics_path, baseline_metric_rows, ["metric_name", "value", "notes"])
@@ -533,8 +648,9 @@ def main() -> int:
             return 1
 
         print("Baseline modeling completed.")
+        print(f"Mode: {args.mode}")
         print(f"Train rows: {train_count}")
-        print(f"Test rows: {test_count}")
+        print(f"Evaluation rows: {test_count}")
         print(f"ROC-AUC: {round(roc_auc, 6)}")
         print(f"PR-AUC: {round(pr_auc, 6)}")
         print(f"Model output: {relative_path(model_output_path)}")
