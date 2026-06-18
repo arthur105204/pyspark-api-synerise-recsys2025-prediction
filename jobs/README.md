@@ -2,6 +2,10 @@
 
 This folder contains small project jobs that can be run locally during each milestone.
 
+Core pipeline jobs stay in this folder. Offline modeling experiments and final
+benchmark scripts live under `experiments/` so the production-oriented pipeline
+does not become crowded with one-off experiment stages.
+
 ## `00_inspect_raw_data.py`
 
 This job inspects the raw files under `data/raw/` before EDA, preprocessing, modeling, or API work.
@@ -571,13 +575,13 @@ It loads the trained Spark ML model, scores the temporal validation snapshot in 
 ### How to Run
 
 ```bash
-python jobs/05b_threshold_analysis.py
+python experiments/05b_threshold_analysis.py
 ```
 
 Optional explicit paths:
 
 ```bash
-python jobs/05b_threshold_analysis.py --model-input data/models/purchase_propensity_baseline_temporal --validation-input data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d --artifact-dir artifacts/modeling/e1_temporal_validation
+python experiments/05b_threshold_analysis.py --model-input data/models/purchase_propensity_baseline_temporal --validation-input data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d --artifact-dir artifacts/modeling/e1_temporal_validation
 ```
 
 Outputs:
@@ -604,13 +608,13 @@ It loads the trained Spark ML model, scores the temporal validation snapshot in 
 ### How to Run
 
 ```bash
-python jobs/05c_calibration_analysis.py
+python experiments/05c_calibration_analysis.py
 ```
 
 Optional explicit paths:
 
 ```bash
-python jobs/05c_calibration_analysis.py --model-input data/models/purchase_propensity_baseline_temporal --validation-input data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d --artifact-dir artifacts/modeling/e3_calibration
+python experiments/05c_calibration_analysis.py --model-input data/models/purchase_propensity_baseline_temporal --validation-input data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d --artifact-dir artifacts/modeling/e3_calibration
 ```
 
 Outputs:
@@ -649,13 +653,13 @@ Feature families:
 ### How to Run
 
 ```bash
-python jobs/05d_feature_ablation.py
+python experiments/05d_feature_ablation.py
 ```
 
 Optional explicit paths:
 
 ```bash
-python jobs/05d_feature_ablation.py --train-input data/processed/training/e1_train_2022_10_10/purchase_propensity_30d --validation-input data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d --artifact-dir artifacts/modeling/e4_feature_ablation
+python experiments/05d_feature_ablation.py --train-input data/processed/training/e1_train_2022_10_10/purchase_propensity_30d --validation-input data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d --artifact-dir artifacts/modeling/e4_feature_ablation
 ```
 
 Outputs:
@@ -692,7 +696,7 @@ It also computes an aggregate feature redundancy audit by family, including pair
 ### How to Run
 
 ```bash
-python jobs/05e_feature_redundancy_followup.py
+python experiments/05e_feature_redundancy_followup.py
 ```
 
 Outputs:
@@ -725,7 +729,7 @@ It detects zero-variance features, skips unsafe correlations involving constant 
 ### How to Run
 
 ```bash
-python jobs/05f_feature_rationalization_audit.py
+python experiments/05f_feature_rationalization_audit.py
 ```
 
 Outputs:
@@ -762,7 +766,7 @@ It keeps the same temporal split, Logistic Regression model class, class weighti
 ### How to Run
 
 ```bash
-python jobs/05g_train_baseline_v21.py
+python experiments/05g_train_baseline_v21.py
 ```
 
 Outputs:
@@ -797,7 +801,7 @@ It keeps total count, 30-day count, and 90-day count features for this isolated 
 ### How to Run
 
 ```bash
-python jobs/05h_train_baseline_v22.py
+python experiments/05h_train_baseline_v22.py
 ```
 
 Outputs:
@@ -833,7 +837,7 @@ It does not add search-to-cart transition features, normalized search intensity,
 ### How to Run
 
 ```bash
-python jobs/05i_train_baseline_v23a.py
+python experiments/05i_train_baseline_v23a.py
 ```
 
 Outputs:
@@ -871,7 +875,7 @@ It does not add raw query text features, query embeddings, session features, tre
 ### How to Run
 
 ```bash
-python jobs/05j_train_baseline_v23b.py
+python experiments/05j_train_baseline_v23b.py
 ```
 
 Outputs:
@@ -912,7 +916,7 @@ It intentionally excludes the other V2-3b transition features:
 ### How to Run
 
 ```bash
-python jobs/05k_train_baseline_v23c.py
+python experiments/05k_train_baseline_v23c.py
 ```
 
 Outputs:
@@ -955,7 +959,7 @@ It does not modify V2-2 features, labels, temporal splits, preprocessing outputs
 ### How to Run
 
 ```bash
-python jobs/05l_train_e6_velocity.py
+python experiments/05l_train_e6_velocity.py
 ```
 
 Outputs:
@@ -996,7 +1000,7 @@ It does not create new features, modify V2-2 features, change labels, change tem
 ### How to Run
 
 ```bash
-python jobs/05m_e6_pruning.py
+python experiments/05m_e6_pruning.py
 ```
 
 Outputs:
@@ -1044,7 +1048,7 @@ It keeps the same temporal split, Logistic Regression model class, class weighti
 ### How to Run
 
 ```bash
-python jobs/05n_train_baseline_v24.py
+python experiments/05n_train_baseline_v24.py
 ```
 
 Outputs:
@@ -1085,7 +1089,7 @@ It does not retrain models, change features, change preprocessing, change labels
 ### How to Run
 
 ```bash
-python jobs/05o_e9_final_benchmark.py
+python experiments/05o_e9_final_benchmark.py
 ```
 
 Outputs:

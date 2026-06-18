@@ -36,7 +36,7 @@ from pyspark.sql import functions as F
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-V21_JOB_PATH = PROJECT_ROOT / "jobs" / "05g_train_baseline_v21.py"
+V21_JOB_PATH = PROJECT_ROOT / "experiments" / "05g_train_baseline_v21.py"
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "configs" / "baseline_v23a_features.json"
 DEFAULT_TRAIN_INPUT = (
     PROJECT_ROOT / "data" / "processed" / "training" / "e1_train_2022_10_10" / "purchase_propensity_30d"
