@@ -1,0 +1,28 @@
+{
+  "experiment": "e6_trend_velocity",
+  "created_at_utc": "2026-06-18T15:02:55.208666+00:00",
+  "base_model": "baseline_v2_2",
+  "train_input": "data/processed/training/e1_train_2022_10_10/purchase_propensity_30d",
+  "validation_input": "data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d",
+  "model_output": "data/models/purchase_propensity_e6_velocity",
+  "feature_count_e6": 33,
+  "e6_features": [
+    "cart_velocity_30d_vs_90d",
+    "cart_delta_30d_90d",
+    "buy_velocity_30d_vs_90d",
+    "buy_delta_30d_90d",
+    "search_velocity_30d_vs_90d",
+    "activity_intensity_ratio"
+  ],
+  "metrics": {
+    "roc_auc": 0.832639,
+    "pr_auc": 0.258004,
+    "precision_at_1pct": 0.49386,
+    "lift_at_1pct": 11.341231,
+    "precision_at_5pct": 0.298828,
+    "lift_at_5pct": 6.862422,
+    "precision_at_10pct": 0.21722,
+    "lift_at_10pct": 4.988347
+  },
+  "decision": "ADOPT_FOR_REVIEW"
+}

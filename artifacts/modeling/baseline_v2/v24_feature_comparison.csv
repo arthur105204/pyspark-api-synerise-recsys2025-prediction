@@ -1,0 +1,4 @@
+model,description,total_model_feature_count,e6_feature_count,included_e6_features,excluded_e6_features,roc_auc,pr_auc,precision_at_1pct,precision_at_5pct,precision_at_10pct,lift_at_1pct,lift_at_5pct,lift_at_10pct,pr_auc_vs_v22,lift5_vs_v22
+baseline_v2_2,Frozen production baseline candidate before E6,27,0,,,0.834208,0.255374,0.484882,0.296158,0.216155,11.135066,6.801107,4.963885,0.0,0.0
+v2_2_plus_full_e6,V2-2 plus all six E6 velocity features,33,6,"cart_velocity_30d_vs_90d,cart_delta_30d_90d,buy_velocity_30d_vs_90d,buy_delta_30d_90d,search_velocity_30d_vs_90d,activity_intensity_ratio",,0.832639,0.258004,0.49386,0.298828,0.21722,11.341231,6.862422,4.988347,0.010299,0.009015
+baseline_v2_4_e6_1,V2-2 plus selected E6.1 velocity subset,32,5,"cart_velocity_30d_vs_90d,cart_delta_30d_90d,buy_velocity_30d_vs_90d,buy_delta_30d_90d,search_velocity_30d_vs_90d",activity_intensity_ratio,0.832396,0.258279,0.494046,0.299246,0.217202,11.345504,6.872036,4.98792,0.011375,0.010429

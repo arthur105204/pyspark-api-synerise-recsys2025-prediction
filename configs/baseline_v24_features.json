@@ -1,0 +1,28 @@
+{
+  "version": "baseline_v2_4_e6_1_consolidated",
+  "objective": "Train a consolidated V2-4 candidate using frozen Baseline V2-2 features plus the selected E6.1 velocity feature subset.",
+  "base_config": "baseline_v2_2",
+  "removed_features": [
+    "is_eligible_purchase_propensity",
+    "buy_to_cart_ratio",
+    "remove_to_cart_ratio",
+    "cart_minus_remove_count",
+    "search_to_cart_ratio",
+    "add_to_cart_count_60d",
+    "product_buy_count_60d",
+    "remove_from_cart_count_60d",
+    "search_query_count_60d"
+  ],
+  "selected_e6_features": [
+    "cart_velocity_30d_vs_90d",
+    "cart_delta_30d_90d",
+    "buy_velocity_30d_vs_90d",
+    "buy_delta_30d_90d",
+    "search_velocity_30d_vs_90d"
+  ],
+  "excluded_e6_features": [
+    "activity_intensity_ratio"
+  ],
+  "decision_rule": "If E6.1 improves PR-AUC or Lift@5 versus V2-2, mark as candidate for production merge. Prefer the smallest feature set with stable TopK improvement.",
+  "note": "V2-4 is a consolidated experiment. It does not modify existing V2-2 features, labels, temporal split, preprocessing outputs, or model architecture."
+}

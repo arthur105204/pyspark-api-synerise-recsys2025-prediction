@@ -1,0 +1,28 @@
+{
+  "experiment": "baseline_v2_4_e6_1_consolidated",
+  "created_at_utc": "2026-06-18T15:36:29.476178+00:00",
+  "base_model": "baseline_v2_2",
+  "model_output": "data/models/purchase_propensity_baseline_v24",
+  "selected_e6_features": [
+    "cart_velocity_30d_vs_90d",
+    "cart_delta_30d_90d",
+    "buy_velocity_30d_vs_90d",
+    "buy_delta_30d_90d",
+    "search_velocity_30d_vs_90d"
+  ],
+  "excluded_e6_features": [
+    "activity_intensity_ratio"
+  ],
+  "feature_count": 32,
+  "metrics": {
+    "roc_auc": 0.832396,
+    "pr_auc": 0.258279,
+    "precision_at_1pct": 0.494046,
+    "lift_at_1pct": 11.345504,
+    "precision_at_5pct": 0.299246,
+    "lift_at_5pct": 6.872036,
+    "precision_at_10pct": 0.217202,
+    "lift_at_10pct": 4.98792
+  },
+  "decision": "CANDIDATE_FOR_PRODUCTION_MERGE"
+}

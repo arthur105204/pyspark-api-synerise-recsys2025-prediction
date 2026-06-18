@@ -1,0 +1,6 @@
+removed_group,removed_features,roc_auc,pr_auc,precision_at_1pct,lift_at_1pct,precision_at_5pct,lift_at_5pct,precision_at_10pct,lift_at_10pct
+none_full_e6,none,0.832639,0.258004,0.49386,11.341231,0.298828,6.862422,0.21722,4.988347
+cart_velocity,"cart_velocity_30d_vs_90d,cart_delta_30d_90d",0.832971,0.257631,0.491302,11.282479,0.298242,6.848963,0.216983,4.982899
+buy_velocity,"buy_velocity_30d_vs_90d,buy_delta_30d_90d",0.833517,0.254834,0.484417,11.124384,0.296288,6.804098,0.215983,4.959933
+search_velocity,search_velocity_30d_vs_90d,0.832811,0.257948,0.493209,11.326276,0.298651,6.858363,0.217132,4.986318
+activity_acceleration,activity_intensity_ratio,0.832395,0.258274,0.494046,11.345504,0.299246,6.872036,0.217202,4.98792

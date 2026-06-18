@@ -1,0 +1,37 @@
+{
+  "version": "e6_trend_velocity",
+  "objective": "Test whether trend/velocity features add predictive value beyond the frozen Baseline V2-2 feature set.",
+  "base_config": "baseline_v2_2",
+  "removed_features": [
+    "is_eligible_purchase_propensity",
+    "buy_to_cart_ratio",
+    "remove_to_cart_ratio",
+    "cart_minus_remove_count",
+    "search_to_cart_ratio",
+    "add_to_cart_count_60d",
+    "product_buy_count_60d",
+    "remove_from_cart_count_60d",
+    "search_query_count_60d"
+  ],
+  "engineered_feature_groups": {
+    "cart_velocity": [
+      "cart_velocity_30d_vs_90d",
+      "cart_delta_30d_90d"
+    ],
+    "buy_velocity": [
+      "buy_velocity_30d_vs_90d",
+      "buy_delta_30d_90d"
+    ],
+    "search_velocity": [
+      "search_velocity_30d_vs_90d"
+    ],
+    "activity_acceleration": [
+      "activity_intensity_ratio"
+    ]
+  },
+  "adoption_criteria": {
+    "pr_auc_relative_improvement_min": 0.005,
+    "lift_5pct_relative_improvement_min": 0.005
+  },
+  "note": "E6 is additive and experimental. It does not modify existing V2-2 features, labels, temporal split, preprocessing outputs, or model architecture."
+}

@@ -1,0 +1,7 @@
+feature_name,non_null_count,missing_count,missing_rate,mean,stddev,min,max
+cart_velocity_30d_vs_90d,1703581,0,0.0,0.704526,0.307164,0.001686,1.0
+cart_delta_30d_90d,1703581,0,0.0,0.099506,2.417281,-197.333333,352.333333
+buy_velocity_30d_vs_90d,1703581,0,0.0,0.881061,0.240446,0.001862,1.0
+buy_delta_30d_90d,1703581,0,0.0,0.010091,0.859505,-178.666667,167.333333
+search_velocity_30d_vs_90d,1703581,0,0.0,0.879871,0.281556,0.0009,1.0
+activity_intensity_ratio,1703581,0,0.0,0.60318,0.244054,0.02,1.0
