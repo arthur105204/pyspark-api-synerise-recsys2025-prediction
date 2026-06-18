@@ -1,0 +1,41 @@
+{
+  "generated_at_timestamp": "2026-06-18T07:08:51+00:00",
+  "experiment": "E3 Calibration Analysis",
+  "status": "success",
+  "model_input_path": "data/models/purchase_propensity_baseline_temporal",
+  "validation_input_path": "data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d",
+  "calibration_curve_path": "artifacts/modeling/e3_calibration/calibration_curve.csv",
+  "calibration_review_path": "artifacts/modeling/e3_calibration/calibration_review.md",
+  "validation_rows": 2149796,
+  "positive_count": 93614,
+  "negative_count": 2056182,
+  "positive_rate": 0.04354552711047932,
+  "min_score": 3.952393967665557e-14,
+  "max_score": 1.0,
+  "avg_score": 0.33681033559572615,
+  "bucket_count": 10,
+  "non_empty_bucket_count": 10,
+  "expected_calibration_error": 0.2932648084852531,
+  "maximum_calibration_gap": 0.6502293257622728,
+  "average_calibration_gap": 0.4066023641635785,
+  "bucket_gaps_under_0_05": 0,
+  "most_bucket_gaps_under_0_05": false,
+  "high_score_overconfident": true,
+  "high_score_overconfidence_bucket_count": 2,
+  "monotonic_actual_positive_rate": true,
+  "calibration_quality": "FAIL",
+  "final_recommendation": "Calibration is poor and probability-based decision making should be avoided until calibration is applied.",
+  "decision_gates": {
+    "pass": "ECE < 0.05 and most bucket gaps < 0.05",
+    "partial_pass": "0.05 <= ECE <= 0.10 without severe high-score overconfidence",
+    "fail": "ECE > 0.10 or high-score buckets are heavily overconfident",
+    "high_score_overconfidence_gap_threshold": 0.1
+  },
+  "privacy": {
+    "artifact_level": "aggregate_only",
+    "row_level_predictions_persisted": false,
+    "raw_client_ids_persisted": false,
+    "raw_query_text_persisted": false,
+    "product_names_persisted": false
+  }
+}

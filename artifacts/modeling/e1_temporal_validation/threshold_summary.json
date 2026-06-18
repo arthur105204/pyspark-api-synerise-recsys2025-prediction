@@ -1,0 +1,211 @@
+{
+  "generated_at_timestamp": "2026-06-18T06:57:13+00:00",
+  "experiment": "E2 Threshold Search & Decision Policy Review",
+  "status": "success",
+  "model_input_path": "data/models/purchase_propensity_baseline_temporal",
+  "validation_input_path": "data/processed/training/e1_valid_2022_11_09/purchase_propensity_30d",
+  "threshold_metrics_path": "artifacts/modeling/e1_temporal_validation/threshold_metrics.csv",
+  "threshold_review_path": "artifacts/modeling/e1_temporal_validation/threshold_review.md",
+  "threshold_start": 0.01,
+  "threshold_end": 0.99,
+  "threshold_step": 0.01,
+  "validation_rows": 2149796,
+  "positive_count": 93614,
+  "negative_count": 2056182,
+  "positive_rate": 0.04354552711047932,
+  "min_score": 3.952393967665557e-14,
+  "max_score": 1.0,
+  "avg_score": 0.33681033559572615,
+  "operating_points": {
+    "max_f1": {
+      "threshold": 0.79,
+      "tp": 34675,
+      "fp": 90192,
+      "tn": 1965990,
+      "fn": 58939,
+      "precision": 0.2776954679779285,
+      "recall": 0.37040399940179886,
+      "f1": 0.3174189059918254,
+      "positive_prediction_rate": 0.05808318556737477,
+      "lift": 6.377129556231747
+    },
+    "precision_ge_20_lowest_threshold": {
+      "threshold": 0.65,
+      "tp": 48191,
+      "fp": 188392,
+      "tn": 1867790,
+      "fn": 45423,
+      "precision": 0.20369595448531805,
+      "recall": 0.5147841134872989,
+      "f1": 0.29189241573969477,
+      "positive_prediction_rate": 0.11004904651418088,
+      "lift": 4.677769865284239
+    },
+    "precision_ge_30_lowest_threshold": {
+      "threshold": 0.83,
+      "tp": 30640,
+      "fp": 71088,
+      "tn": 1985094,
+      "fn": 62974,
+      "precision": 0.3011953444479396,
+      "recall": 0.32730147200205095,
+      "f1": 0.3137062178128615,
+      "positive_prediction_rate": 0.047319838719580835,
+      "lift": 6.916791790894554
+    },
+    "precision_ge_40_lowest_threshold": {
+      "threshold": 0.95,
+      "tp": 16850,
+      "fp": 24602,
+      "tn": 2031580,
+      "fn": 76764,
+      "precision": 0.40649425841937664,
+      "recall": 0.17999444527527933,
+      "f1": 0.24950764811277448,
+      "positive_prediction_rate": 0.019281829531732315,
+      "lift": 9.33492566040274
+    },
+    "recall_ge_50_highest_threshold": {
+      "threshold": 0.66,
+      "tp": 47201,
+      "fp": 179653,
+      "tn": 1876529,
+      "fn": 46413,
+      "precision": 0.2080677440115669,
+      "recall": 0.5042087721921935,
+      "f1": 0.2945754334286107,
+      "positive_prediction_rate": 0.10552350083449778,
+      "lift": 4.778165699629227
+    },
+    "recall_ge_70_highest_threshold": {
+      "threshold": 0.5,
+      "tp": 66444,
+      "fp": 429412,
+      "tn": 1626770,
+      "fn": 27170,
+      "precision": 0.13399858023297087,
+      "recall": 0.7097656333454397,
+      "f1": 0.22543640897755612,
+      "positive_prediction_rate": 0.23065258284972157,
+      "lift": 3.0772065267002784
+    },
+    "population_closest_1pct": {
+      "threshold": 0.99,
+      "tp": 9273,
+      "fp": 9472,
+      "tn": 2046710,
+      "fn": 84341,
+      "precision": 0.4946919178447586,
+      "recall": 0.09905569679748756,
+      "f1": 0.16506020879502312,
+      "positive_prediction_rate": 0.008719431983313765,
+      "lift": 11.360338263667726
+    },
+    "population_closest_5pct": {
+      "threshold": 0.82,
+      "tp": 31648,
+      "fp": 75600,
+      "tn": 1980582,
+      "fn": 61966,
+      "precision": 0.29509174996270326,
+      "recall": 0.3380690922297947,
+      "f1": 0.31512182493453217,
+      "positive_prediction_rate": 0.049887524211599615,
+      "lift": 6.776625971572837
+    },
+    "population_closest_10pct": {
+      "threshold": 0.67,
+      "tp": 46265,
+      "fp": 171518,
+      "tn": 1884664,
+      "fn": 47349,
+      "precision": 0.21243623239646806,
+      "recall": 0.49421026769500287,
+      "f1": 0.29714480229417756,
+      "positive_prediction_rate": 0.10130403070802997,
+      "lift": 4.878485725009052
+    },
+    "population_closest_20pct": {
+      "threshold": 0.51,
+      "tp": 63806,
+      "fp": 383662,
+      "tn": 1672520,
+      "fn": 29808,
+      "precision": 0.14259343684911546,
+      "recall": 0.6815860875510074,
+      "f1": 0.23584595310877093,
+      "positive_prediction_rate": 0.20814440067801782,
+      "lift": 3.274582863294817
+    }
+  },
+  "policy_comparison": [
+    {
+      "policy": "Best-F1 threshold",
+      "threshold": 0.79,
+      "population_targeted": 0.05808318556737477,
+      "precision": 0.2776954679779285,
+      "recall": 0.37040399940179886,
+      "lift": 6.377129556231747,
+      "positive_count_captured": 34675
+    },
+    {
+      "policy": "Precision >= 20% threshold",
+      "threshold": 0.65,
+      "population_targeted": 0.11004904651418088,
+      "precision": 0.20369595448531805,
+      "recall": 0.5147841134872989,
+      "lift": 4.677769865284239,
+      "positive_count_captured": 48191
+    },
+    {
+      "policy": "Precision >= 30% threshold",
+      "threshold": 0.83,
+      "population_targeted": 0.047319838719580835,
+      "precision": 0.3011953444479396,
+      "recall": 0.32730147200205095,
+      "lift": 6.916791790894554,
+      "positive_count_captured": 30640
+    },
+    {
+      "policy": "Top 1%",
+      "threshold": null,
+      "population_targeted": 0.01,
+      "precision": 0.478742,
+      "recall": 0.109941,
+      "lift": 10.994062,
+      "positive_count_captured": 10292
+    },
+    {
+      "policy": "Top 5%",
+      "threshold": null,
+      "population_targeted": 0.05,
+      "precision": 0.294837,
+      "recall": 0.338539,
+      "lift": 6.77077,
+      "positive_count_captured": 31692
+    },
+    {
+      "policy": "Top 10%",
+      "threshold": null,
+      "population_targeted": 0.1,
+      "precision": 0.213922,
+      "recall": 0.491262,
+      "lift": 4.912611,
+      "positive_count_captured": 45989
+    }
+  ],
+  "decision_answers": {
+    "captures_most_buyers": "Precision >= 20% threshold",
+    "highest_precision": "Top 1%",
+    "fixed_threshold_preferable": false,
+    "topk_preferable": true,
+    "recommended_policy": "Use TopK segments for current baseline decisioning; Top 5% is the practical default campaign segment, with Top 1% for conservative/high-cost outreach and Top 10% for broader campaigns."
+  },
+  "privacy": {
+    "artifact_level": "aggregate_only",
+    "row_level_predictions_persisted": false,
+    "raw_client_ids_persisted": false,
+    "raw_query_text_persisted": false,
+    "product_names_persisted": false
+  }
+}
